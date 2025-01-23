@@ -9,13 +9,16 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='/css/styles.css') }}"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <!-- Кнопки входа и регистрации сверху с эффектами -->
-
     <div class="top-btns">
       {% if session['user_id'] %}
-      <div>{{current_user_id}}</div>
+      <div>{{ current_user_id }}</div>
       <a href="/logout" class="custom-btn btn-gray">Выйти</a>
       {% else %}
       <a href="/login" class="custom-btn btn-green">Войти</a>
@@ -23,44 +26,49 @@
       {% endif %}
     </div>
 
-    <div class="container mt-5">
+    <div class="container">
       <div class="text-center shadow p-5 bg-light rounded">
-        <h1 class="display-4 text-primary text-center">Добро пожаловать!</h1>
+        <h1 class="display-4 text-primary">Добро пожаловать!</h1>
         <p class="lead mt-3">
           Управляйте модулями быстро и удобно с помощью нашего интерфейса.
         </p>
 
         <div class="mt-4">
-          <div class="custom-margin-bottom">
-            <a href="/add" class="custom-btn btn-green me-3">
+          <!-- Контейнер для кнопок -->
+          <div class="d-flex flex-column gap-3 align-items-center">
+            <!-- Кнопка "Создать новый модуль" -->
+            <a href="/add" class="custom-btn btn-green w-100">
               <span>Создать новый модуль</span>
             </a>
-            <a href="/draft" class="custom-btn btn-gray">
+
+            <!-- Кнопка "Перейти в черновик" -->
+            <a href="/draft" class="custom-btn btn-gray w-100">
               <span>Перейти в черновик</span>
             </a>
-          </div>
 
-          <a href="/hr_add" class="custom-btn btn-gray custom-margin-bottom">
-            <span>Назначение нового модуля (для HR) </span>
-          </a>
-          <br />
-          <a
-            href="/view_modules"
-            class="custom-btn btn-green me-3 custom-margin-bottom"
-          >
-            <span>Адаптационные модули</span>
-            {% if count_modules > 0 %}
-            <span class="notification-badge">{{ count_modules }}</span>
-            {% endif %}
-          </a>
-          <a href="/joint_development" class="custom-btn btn-green me-3">
-            <span>Совместная разработка</span>
-          </a>
-          <br />
-          <br />
-          <a href="/view_modules_sogl" class="custom-btn btn-gray">
-            <span>Перейти к согласованию</span>
-          </a>
+            <!-- Кнопка "Назначение нового модуля (для HR)" -->
+            <a href="/hr_add" class="custom-btn btn-gray w-100">
+              <span>Назначение нового модуля (для HR)</span>
+            </a>
+
+            <!-- Кнопка "Адаптационные модули" с уведомлением -->
+            <a href="/view_modules" class="custom-btn btn-green w-100">
+              <span>Адаптационные модули</span>
+              {% if count_modules > 0 %}
+              <span class="notification-badge">{{ count_modules }}</span>
+              {% endif %}
+            </a>
+
+            <!-- Кнопка "Совместная разработка" -->
+            <a href="/joint_development" class="custom-btn btn-green w-100">
+              <span>Совместная разработка</span>
+            </a>
+
+            <!-- Кнопка "Перейти к согласованию" -->
+            <a href="/view_modules_sogl" class="custom-btn btn-gray w-100">
+              <span>Согласование модулей</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

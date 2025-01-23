@@ -1,3 +1,57 @@
+.list-unstyled {
+  padding-left: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+/* Оформление кнопок */
+.btn-download {
+  display: inline-block;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  background: linear-gradient(145deg, #4caf50, #388e3c); /* Зеленый градиент */
+  color: white;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: auto; /* Убираем растяжение на всю ширину */
+  max-width: 250px; /* Ограничиваем максимальную ширину кнопки */
+  margin: 0 0 0 20px; /* Отступ с левой стороны */
+  display: block; /* Чтобы кнопки были блоками */
+}
+
+.btn-download:hover {
+  background: linear-gradient(
+    145deg,
+    #388e3c,
+    #4caf50
+  ); /* Инвертированный градиент */
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn-download:active {
+  background: linear-gradient(
+    145deg,
+    #2e7d32,
+    #388e3c
+  ); /* Тёмно-зеленый при нажатии */
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-download:focus {
+  outline: none;
+}
+
+/* Отступы между кнопками */
+li {
+  margin-bottom: 15px; /* Отступ между кнопками */
+}
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f8f9fa; /* Светлый фон */
@@ -14,4 +68,22 @@ h1 {
   padding: 20px;
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+  position: fixed; /* Фиксируем позицию */
+  top: 20px; /* Отступ сверху */
+  right: 20px; /* Отступ справа */
+  padding: 10px 20px; /* Размер кнопки */
+  background-color: #f4f4f4; /* Цвет фона */
+  color: #333; /* Цвет текста */
+  text-decoration: none; /* Убираем подчеркивание */
+  border-radius: 5px; /* Скругление углов */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для кнопки */
+  font-size: 16px; /* Размер шрифта */
+}
+
+.btn-secondary:hover {
+  background-color: #ddd; /* Цвет при наведении */
+  cursor: pointer; /* Курсор при наведении */
 }

@@ -17,9 +17,7 @@
     <div class="sidebar">
       <h2>Меню</h2>
       <input type="text" placeholder="Поиск..." id="search-input" />
-      <div>
-        <label> <input type="checkbox" id="archive-checkbox" /> Архив </label>
-      </div>
+
       <div>
         <label for="status-select">Статус:</label>
         <select id="status-select">
@@ -41,33 +39,18 @@
                 {% if module.duration_develop < 7 %} red  
                 {% elif module.state == 'черновик' %} yellow
                 {% elif module.state == 'новый просмотрен' %} green
-                {% else %} gray
                 {% endif %};"
         data-state="{% if module.duration_develop < 7 %}срочный{% else %} {{module.state}} {% endif %}"
       >
         <a
-          href="{{ url_for('module_detail', module_id=module.id) }}"
+          href="{{ url_for('joint_development_detail', module_id=module.id) }}"
           style="color: white; text-decoration: none"
         >
           {{ module.code_name }}
         </a>
       </div>
-      {% endfor %} {% for arch_module in arch_modules %}
-      <div
-        class="module archived"
-        data-state="{{ arch_module.state }}"
-        style="background-color: gray; display: none"
-      >
-        <a
-          href="{{ url_for('module_detail', module_id=arch_module.id) }}"
-          style="color: white; text-decoration: none"
-        >
-          {{ arch_module.code_name }}
-        </a>
-      </div>
       {% endfor %}
 
-      <!-- Кнопка "Назад на главную" -->
       <a href="/" class="btn-secondary">Назад на главную</a>
     </div>
   </body>

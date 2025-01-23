@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session
+from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session, send_from_directory
 from flask_mail import Mail, Message
 import os
 import json
@@ -12,20 +12,25 @@ from models.User import User
 from flask_migrate import Migrate
 from models.Module import Module
 from flask_socketio import SocketIO, emit
+from flask_apscheduler import APScheduler  
+from datetime import datetime, timedelta
+
 
 app = Flask(__name__)
 Bootstrap(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
-app.config['UPLOAD_FOLDER'] = './uploads'
-app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20 MB
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Ограничение 16 МБ
+ALLOWED_EXTENSIONS = {'pdf', 'pptx', 'xlsx', 'docx', 'jpg', 'mkv', 'avi', 'mp', 'url'}
 app.config.from_object('config_smtp')  # Загрузка конфигурации из файла config.py
 mail = Mail(app)
 socketio = SocketIO(app)
 app.secret_key = os.urandom(24)  # Для безопасности сессий
 db.init_app(app)
 migrate = Migrate(app, db)
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+scheduler = APScheduler()
 
 
 
@@ -99,10 +104,17 @@ def logout():
     session.clear()  
     flash("Вы успешно вышли из системы.", "success")
     return redirect(url_for('login'))  
+##########################################AUTH LOGIC END##############################################
+
+
+##########################################INDEX LOGIC START##############################################
+
+count_modules = 0
 
 @app.route('/')
 @login_required
 def index():
+    global count_modules
     modules = Module.query.all()
     count_modules = Module.query.filter(Module.state == 'новый').count()
     user_logged_in = 'user_id' in session  
@@ -111,22 +123,30 @@ def index():
     user_name = user.full_name
     return render_template('index.html',current_user_id=user_name, modules=modules, count_modules=count_modules, user_logged_in=user_logged_in), 200
 
-
-##########################################AUTH LOGIC END##############################################
+##########################################INDEX LOGIC END##############################################
 
 
 ##########################################CREATE MODULE FOR WORKER LOGIC START##############################################
+
 positions_dict = {
     "position1": "Должность 1",
     "position2": "Должность 2",
     "position3": "Должность 3",
     "position4": "Должность 4"
 }
-
 activities_dict = {
     "theory": "Теория",
     "practice": "Практика"
 }
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    # Отправка файла пользователю для скачивания
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
@@ -136,7 +156,7 @@ def add_module():
         
         # Получаем список должностей и преобразуем их в русские названия
         positions = [positions_dict.get(pos, pos) for pos in request.form.getlist('positions')]
-
+    
         # Формируем список мероприятий и преобразуем типы в русские названия
         activities = [
             {
@@ -146,43 +166,40 @@ def add_module():
             }
             for i in range(len(request.form.getlist('activity_name[]')))
         ]
-
+    
         data_source = request.form['data_source']
         duration = int(request.form['duration'])  # Приводим к целому числу
         responsible = request.form['responsible']
-
-        print("Files in request:", request.files)
-        print("Materials files:", request.files.getlist('materials[]'))
-
-        materials = []
-        for file in request.files.getlist('materials[]'):
-            print("Processing file:", file.filename)
-            if file and file.filename:
-                filename = secure_filename(file.filename)
-                file_data = file.read()
-                materials.append({
-                    'filename': filename,
-                    'data': str(file_data)  # Преобразуем в строку для отладки
-                })
-            else:
-                print("Empty file or filename")
-
-        print("Materials before JSON conversion:", materials)
         
-        # Преобразуем список материалов в JSON
-        materials_json = json.dumps(materials) if materials else '[]'  # Если нет материалов, возвращаем пустой массив
-
+        # Проверяем наличие файлов, если нет - оставляем пустой список материалов
+        materials = []
+        if 'materials[]' in request.files:
+            files = request.files.getlist('materials[]')
+    
+            # Проверяем каждый файл и сохраняем в папку
+            for file in files:
+                if file.filename != '':  # Только если файл был выбран
+                    materials.append(str(file.filename))
+    
+                    if file and allowed_file(file.filename):
+                        # Генерируем путь для сохранения файла
+                        filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    
+                        # Сохраняем файл
+                        file.save(filename)
+    
         new_module = Module(
-        # state = "согласование",
-        module_name=module_name,
-        positions=positions,
-        activities=activities,
-        data_source=data_source,
-        duration=duration,
-        responsible=responsible,
-        materials=materials_json
+            module_name=module_name,
+            positions=positions,
+            activities=activities,
+            data_source=data_source,
+            duration=duration,
+            responsible=responsible,
+            state='выполнен',
+            code_name="без кодового названия",
+            materials=materials  # Если файлов нет, то просто пустой список
         )
-
+    
         # Добавление записи в сессию и сохранение в базе данных
         try:
             db.session.add(new_module)
@@ -193,10 +210,10 @@ def add_module():
             print(f"Произошла ошибка при добавлении модуля: {str(e)}")
         finally:
             db.session.close()
-
+    
         return redirect(url_for('index'))
 
-    return render_template('add_module.html')
+    return render_template('add_module.html', positions_dict=positions_dict)
 ##########################################CREATE MODULE FOR WORKER LOGIC END##############################################
 
 
@@ -205,61 +222,6 @@ def add_module():
 @app.route('/draft', methods=['GET', 'POST'])
 @login_required
 def draft():
-    if request.method == 'POST':
-        module_name = request.form['module_name']
-        positions = request.form.getlist('positions')
-        activities = [
-            {
-                'name': request.form.getlist('activity_name[]')[i],
-                'type': request.form.getlist('activity_type[]')[i],
-                'content': request.form.getlist('activity_content[]')[i]
-            }
-            for i in range(len(request.form.getlist('activity_name[]')))
-        ]
-        data_source = request.form['data_source']
-        duration = request.form['duration']
-        responsible = request.form['responsible']
-
-        materials = []
-        for file in request.files.getlist('materials[]'):
-            print("Processing file:", file.filename)
-            if file and file.filename:
-                filename = secure_filename(file.filename)
-                file_data = file.read()
-                materials.append({
-                    'filename': filename,
-                    'data': str(file_data)  # Преобразуем в строку для отладки
-                })
-            else:
-                print("Empty file or filename")
-
-        materials_json = json.dumps(materials)
-
-
-
-        new_module = Module(
-        # state = "согласование",
-        module_name=module_name,
-        positions=positions,
-        activities=activities,
-        data_source=data_source,
-        duration=duration,
-        responsible=responsible,
-        materials=materials_json
-        )
-
-        # Добавление записи в сессию и сохранение в базе данных
-        try:
-            db.session.add(new_module)
-            db.session.commit()
-            print("Новый модуль успешно добавлен в базу данных.")
-        except Exception as e:
-            db.session.rollback()
-            print(f"Произошла ошибка при добавлении модуля: {str(e)}")
-        finally:
-            db.session.close()
-            
-        return redirect(url_for('index'))
     return render_template('draft.html')
 ##########################################DRAFT FOR WORKER LOGIC END##############################################
 
@@ -324,19 +286,82 @@ def hr_add():
 @app.route('/view_modules', methods=['GET'])
 @login_required
 def view_modules():
-    modules = Module.query.filter(Module.state.in_( ['новый', 'черновик'] )).all()
-    return render_template('modules.html', modules=modules)  
+    count_modules = Module.query.filter(Module.state == 'новый').update({'state': 'новый просмотрен'})
+    db.session.commit()
+    modules = Module.query.filter(Module.state.in_( ['новый просмотрен', 'черновик'] )).all()
+    arch_modules = Module.query.filter(Module.state.in_( ['выполнен'])).all()
+    return render_template('modules.html', modules=modules, arch_modules=arch_modules)  
 
 @app.route('/module/<int:module_id>', methods=['GET'])
 @login_required
 def module_detail(module_id):
     module = Module.query.get_or_404(module_id)  # Получаем модуль по ID или 404, если не найден
-    return render_template('module_detail.html', module=module)
+    
+    responsible_user_ids_str = module.responsible_user_ids
+    if not responsible_user_ids_str or responsible_user_ids_str == 'None':
+        responsible_users = None  # Возвращаем None, если строка пустая или 'None'
+    else:
+    # Убираем фигурные скобки и пробелы, а затем разделяем по запятой
+        responsible_user_ids = responsible_user_ids_str.strip('{}').replace(' ', '').split(',')
+    # Извлекаем пользователей по этим id
+        responsible_users = User.query.filter(User.id.in_([int(user_id) for user_id in responsible_user_ids])).all()
+ 
+    return render_template('module_detail.html', module=module, responsible_users=responsible_users)
 
 ##########################################VIEW MODULES  LOGIC END####################################################
 
+##########################################VIEW MODULES  LOGIC END####################################################
+# Настройка расписания (каждые 24 часа)
+@scheduler.task('interval', id='update_durations', hours=24, start_date='2025-01-25 00:00:00')
+def update_durations():
+    with app.app_context():
+        # Получаем все модули
+        modules = Module.query.all()
+        
+        for module in modules:
+            if module.duration_develop > 0:
+                module.duration_develop -= 1
+            if module.duration > 0:
+                module.duration -= 1
+        
+        # Сохраняем изменения
+        db.session.commit()
+        print("Длительности обновлены")
+
+##########################################VIEW MODULES  LOGIC END####################################################
+
+##########################################JOINT DEVELOPMENT  LOGIC START####################################################
+
+@app.route('/joint_development', methods=['GET'])
+@login_required
+def joint_development():
+    current_user_id = session['user_id']
+
+    modules = Module.query.filter(
+        Module.state.in_(['новый', 'черновик', 'новый просмотрен']),
+        Module.responsible_user_ids.like(f'%{current_user_id}%')  # Проверяем наличие ID в строке
+    ).all()
+
+    return render_template('joint_modules.html', modules=modules)  
+
+@app.route('/joint_development/<int:module_id>', methods=['GET', 'POST'])
+@login_required
+def joint_development_detail(module_id):
+    module = Module.query.get_or_404(module_id)
+    global positions_dict
+    global activities_dict
+
+    return render_template('joint_module_develop.html', module=module, positions_dict=positions_dict, activities_dict=activities_dict)
+
+##########################################JOINT DEVELOPMENT  LOGIC END####################################################
 
 if __name__ == '__main__':
+    scheduler.init_app(app)
+    scheduler.start()
+
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+
     with app.app_context():
         db.create_all()  
     socketio.run(app, debug=True)

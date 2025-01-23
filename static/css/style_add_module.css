@@ -55,17 +55,21 @@ button:hover {
 }
 
 .btn-secondary {
-  background-color: #6c757d;
-  color: white;
-  text-decoration: none;
-  padding: 10px 20px;
-  display: inline-block;
-  margin-top: 10px;
-  border-radius: 4px;
+  position: fixed; /* Фиксируем позицию */
+  top: 20px; /* Отступ сверху */
+  right: 20px; /* Отступ справа */
+  padding: 10px 20px; /* Размер кнопки */
+  background-color: #f4f4f4; /* Цвет фона */
+  color: #333; /* Цвет текста */
+  text-decoration: none; /* Убираем подчеркивание */
+  border-radius: 5px; /* Скругление углов */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для кнопки */
+  font-size: 16px; /* Размер шрифта */
 }
 
 .btn-secondary:hover {
-  background-color: #5a6268;
+  background-color: #ddd; /* Цвет при наведении */
+  cursor: pointer; /* Курсор при наведении */
 }
 
 .activity {

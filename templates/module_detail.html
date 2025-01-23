@@ -10,30 +10,78 @@
     />
   </head>
   <body>
-    <h1>Информация о модуле: {{ module.module_name }}</h1>
+    <h1>Информация о модуле: {{ module.code_name }}</h1>
 
     <div class="module-details">
-      <p><strong>CodeName:</strong> {{ module.code_name }}</p>
-      <p>
-        <strong>responsible_user_ids:</strong> {{ module.responsible_user_ids }}
-      </p>
+      {% if module.code_name %}
+      <p><strong>Кодовое название:</strong> {{ module.code_name }}</p>
+      {% endif %} {% if module.responsible_user_ids %}
+      <strong>Ответственные пользователи за разработку модуля:</strong>
+      <ul>
+        {% for user in responsible_users %}
+        <li>{{ user.full_name }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <!-- {% if module.duration_develop %}
       <p><strong>duration_develop:</strong> {{ module.duration_develop }}</p>
-
-      <p><strong>ID:</strong> {{ module.id }}</p>
+      {% endif %} -->
+      {% if module.id %}
+      <p><strong>ID данного модуля:</strong> {{ module.id }}</p>
+      {% endif %} {% if module.module_name %}
       <p><strong>Название:</strong> {{ module.module_name }}</p>
+      {% endif %} {% if module.importance %}
       <p><strong>Важность:</strong> {{ module.importance }}</p>
+      {% endif %} {% if module.state %}
       <p><strong>Состояние:</strong> {{ module.state }}</p>
-
-      <p><strong>Positions:</strong> {{ module.positions }}</p>
-      <p><strong>activities:</strong> {{ module.activities }}</p>
-      <p><strong>data_source:</strong> {{ module.data_source }}</p>
-      <p><strong>duration:</strong> {{ module.duration }}</p>
-      <p><strong>responsible:</strong> {{ module.responsible }}</p>
-      <p><strong>materials:</strong> {{ module.materials }}</p>
-
+      {% endif %} {% if module.positions %}
+      <p><strong>Должности:</strong></p>
+      <ul>
+        {% for position in module.positions %}
+        <li>{{ position }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% if module.activities %}
+      <p><strong>Мероприятия:</strong></p>
+      <ul style="text-decoration: none; list-style-type: none">
+        {% for activity in module.activities %}
+        <li>
+          <strong>Название:</strong> {{ activity.name }}<br />
+          <strong>Тип:</strong> {{ activity.type }}<br />
+          <strong>Описание:</strong> {{ activity.content }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% if module.data_source %}
+      <p><strong>Источник(и):</strong> {{ module.data_source }}</p>
+      {% endif %} {% if module.duration %}
+      <p><strong>Cрок выполнения:</strong> {{ module.duration }}</p>
+      {% endif %} {% if module.responsible %}
+      <p><strong>Ответственный:</strong> {{ module.responsible }}</p>
+      {% endif %} {% if module.materials %}
+      <p><strong>Материалы:</strong></p>
+      <ul class="list-unstyled">
+        {% for filename in module.materials %}
+        <li class="mb-3">
+          <a
+            href="{{ url_for('download_file', filename=filename) }}"
+            class="btn btn-download"
+            download
+          >
+            Скачать {{ filename }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p><strong>Материалы:</strong> Материалы не добавлены</p>
+      {% endif %} {% if module.duration_develop %}
       <p>
         <strong>Срок разработки:</strong> {{ module.duration_develop }} дней
       </p>
+      {% endif %}
+
+      <a href="/" class="btn-secondary">Назад на главную</a>
     </div>
   </body>
 </html>

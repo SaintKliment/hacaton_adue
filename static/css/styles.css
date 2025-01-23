@@ -1,139 +1,118 @@
-.custom-margin-bottom {
-  margin-bottom: 100px;
-}
-.notification-badge {
-  display: inline-block;
-  background-color: red; /* Цвет фона кружка */
-  color: white; /* Цвет текста */
-  border-radius: 50%; /* Круглая форма */
-  padding: 5px 10px; /* Отступы для размера */
-  font-size: 14px; /* Размер шрифта */
-  margin-left: 8px; /* Отступ слева от кнопки */
-}
+/* Основные стили */
 body {
-  background-color: #f8f9fa;
   font-family: "Roboto", sans-serif;
+  background-color: #f4f7fc;
+  color: #333;
+  margin: 0;
+  padding: 0;
 }
-
-h1 {
-  font-weight: 700;
-  color: #28a745;
-}
-
-p.lead {
-  color: #6c757d;
-}
-
-.container {
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-/* Кнопки сверху */
 .top-btns {
   display: flex;
   justify-content: flex-end;
-  margin: 20px;
+  padding: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
 .top-btns a {
   margin-left: 15px;
+  padding: 8px 20px;
+  font-weight: 500;
   text-decoration: none;
-  padding: 8px 15px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+.btn-green {
+  background-color: #28a745;
+  color: white;
+}
+.btn-gray {
+  background-color: #6c757d;
+  color: white;
+}
+.btn-green:hover,
+.btn-gray:hover {
+  opacity: 0.85;
+}
+
+/* Основной контейнер */
+.container {
+  margin-top: 50px;
+}
+.text-center {
+  text-align: center;
+}
+
+/* Основной блок с контентом */
+.shadow {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.bg-light {
+  background-color: #f9f9f9;
+}
+.rounded {
+  border-radius: 10px;
+}
+.display-4 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #007bff;
+}
+.lead {
+  font-size: 1.2rem;
+  margin-top: 20px;
+  color: #555;
+}
+
+/* Контейнер для кнопок */
+.d-flex {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+.w-100 {
+  width: 100%;
+  max-width: 300px;
+  display: inline-flex;
+  justify-content: center;
+  text-align: center;
+}
+.custom-btn {
+  padding: 12px 30px;
   font-size: 16px;
   font-weight: bold;
+  border-radius: 30px;
   text-transform: uppercase;
-  border-radius: 50px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden;
-}
-
-.top-btns a span {
-  position: relative;
-  z-index: 2;
-}
-
-.top-btns a::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 50px;
-  transform: scale(0);
-  transition: transform 0.4s ease;
-  z-index: 1;
-}
-
-.top-btns a:hover {
-  transform: translateY(-3px);
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.top-btns a:hover::before {
-  transform: scale(1);
-}
-
-/* Пользовательские стили кнопок */
-.custom-btn {
-  display: inline-block;
-  position: relative;
-  padding: 10px 25px;
-  font-size: 18px;
-  font-weight: bold;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: #fff;
-  border-radius: 50px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden;
-}
-
-.custom-btn span {
-  position: relative;
-  z-index: 2;
-}
-
-.custom-btn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 50px;
-  transform: scale(0);
-  transition: transform 0.4s ease;
-  z-index: 1;
-}
-
-.custom-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.custom-btn:hover::before {
-  transform: scale(1);
-}
-
-.btn-green {
-  background: linear-gradient(45deg, #28a745, #218838);
-}
-
-.btn-gray {
-  background: linear-gradient(45deg, #6c757d, #5a6268);
-}
-.collab-buttons {
-  display: flex;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  display: inline-flex;
   justify-content: center;
-  margin-top: 20px;
-  gap: 10px;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.mt-5 {
-  font-weight: 700;
-  color: #28a745;
+.notification-badge {
+  background-color: #ff6347;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  padding: 5px 10px;
+  margin-left: 10px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2rem;
+  }
+  .lead {
+    font-size: 1rem;
+  }
+  .w-100 {
+    width: 100%;
+  }
+}
+
+a {
+  text-decoration: none;
 }

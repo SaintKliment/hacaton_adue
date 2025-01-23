@@ -20,33 +20,43 @@
       <label for="module_name">Рабочее наименование модуля:</label>
       <input type="text" id="module_name" name="module_name" required />
 
-      <label>Согласованты:</label><br />
-      {% for sogl_user in sogl_users %}
-      <input
-        type="checkbox"
-        id="sogl_user_{{ sogl_user.id }}"
+      <label for="sogl_users">Согласованты:</label>
+      <select
+        id="sogl_users"
         name="sogl_users[]"
-        value="{{ sogl_user.id }}"
-      />
-      <label for="sogl_user_{{ sogl_user.id }}">{{ sogl_user.full_name }}</label
-      ><br />
-      {% endfor %}
+        multiple
+        size="5"
+        <!--
+        можно
+        указать
+        нужное
+        количество
+        отображаемых
+        строк
+        --
+      >
+        required > {% for sogl_user in sogl_users %}
+        <option value="{{ sogl_user.id }}">{{ sogl_user.full_name }}</option>
+        {% endfor %}
+      </select>
 
       <label for="responsible_users">Ответственные пользователи:</label>
-      <div id="responsible_users">
-        <!-- Здесь будут чекбоксы с пользователями из БД -->
-        {% for user in users %}
-        <div>
-          <input
-            type="checkbox"
-            id="user_{{ user.id }}"
-            name="responsible_users"
-            value="{{ user.id }}"
-          />
-          <label for="user_{{ user.id }}">{{ user.full_name }}</label>
-        </div>
+      <select
+        id="responsible_users"
+        name="responsible_users[]"
+        multiple
+        size="5"
+        <!--
+        аналогично,
+        укажите
+        нужное
+        количество
+        --
+      >
+        required > {% for user in users %}
+        <option value="{{ user.id }}">{{ user.full_name }}</option>
         {% endfor %}
-      </div>
+      </select>
 
       <label for="duration">Срок создания модуля (в днях):</label>
       <input type="number" id="duration" name="duration" required />
