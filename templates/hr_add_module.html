@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Добавить модуль</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='/css/style_draft_module.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Добавить модуль</h1>
+    <form
+      action="/hr_add"
+      method="POST"
+      id="moduleForm"
+      enctype="multipart/form-data"
+    >
+      <label for="module_name">Рабочее наименование модуля:</label>
+      <input type="text" id="module_name" name="module_name" required />
+
+      <label>Согласованты:</label><br />
+      {% for sogl_user in sogl_users %}
+      <input
+        type="checkbox"
+        id="sogl_user_{{ sogl_user.id }}"
+        name="sogl_users[]"
+        value="{{ sogl_user.id }}"
+      />
+      <label for="sogl_user_{{ sogl_user.id }}">{{ sogl_user.full_name }}</label
+      ><br />
+      {% endfor %}
+
+      <label for="responsible_users">Ответственные пользователи:</label>
+      <div id="responsible_users">
+        <!-- Здесь будут чекбоксы с пользователями из БД -->
+        {% for user in users %}
+        <div>
+          <input
+            type="checkbox"
+            id="user_{{ user.id }}"
+            name="responsible_users"
+            value="{{ user.id }}"
+          />
+          <label for="user_{{ user.id }}">{{ user.full_name }}</label>
+        </div>
+        {% endfor %}
+      </div>
+
+      <label for="duration">Срок создания модуля (в днях):</label>
+      <input type="number" id="duration" name="duration" required />
+
+      <button type="submit">Добавить модуль</button>
+    </form>
+    <a href="/" class="btn-secondary">Назад на главную</a>
+  </body>
+</html>

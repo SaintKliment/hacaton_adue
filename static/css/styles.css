@@ -1,0 +1,139 @@
+.custom-margin-bottom {
+  margin-bottom: 100px;
+}
+.notification-badge {
+  display: inline-block;
+  background-color: red; /* Цвет фона кружка */
+  color: white; /* Цвет текста */
+  border-radius: 50%; /* Круглая форма */
+  padding: 5px 10px; /* Отступы для размера */
+  font-size: 14px; /* Размер шрифта */
+  margin-left: 8px; /* Отступ слева от кнопки */
+}
+body {
+  background-color: #f8f9fa;
+  font-family: "Roboto", sans-serif;
+}
+
+h1 {
+  font-weight: 700;
+  color: #28a745;
+}
+
+p.lead {
+  color: #6c757d;
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Кнопки сверху */
+.top-btns {
+  display: flex;
+  justify-content: flex-end;
+  margin: 20px;
+}
+
+.top-btns a {
+  margin-left: 15px;
+  text-decoration: none;
+  padding: 8px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 50px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.top-btns a span {
+  position: relative;
+  z-index: 2;
+}
+
+.top-btns a::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50px;
+  transform: scale(0);
+  transition: transform 0.4s ease;
+  z-index: 1;
+}
+
+.top-btns a:hover {
+  transform: translateY(-3px);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.top-btns a:hover::before {
+  transform: scale(1);
+}
+
+/* Пользовательские стили кнопок */
+.custom-btn {
+  display: inline-block;
+  position: relative;
+  padding: 10px 25px;
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  border-radius: 50px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.custom-btn span {
+  position: relative;
+  z-index: 2;
+}
+
+.custom-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50px;
+  transform: scale(0);
+  transition: transform 0.4s ease;
+  z-index: 1;
+}
+
+.custom-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.custom-btn:hover::before {
+  transform: scale(1);
+}
+
+.btn-green {
+  background: linear-gradient(45deg, #28a745, #218838);
+}
+
+.btn-gray {
+  background: linear-gradient(45deg, #6c757d, #5a6268);
+}
+.collab-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.mt-5 {
+  font-weight: 700;
+  color: #28a745;
+}

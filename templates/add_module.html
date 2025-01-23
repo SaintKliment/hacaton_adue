@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Добавить модуль</title>
+    <!-- Подключение JavaScript -->
+    <script
+      type="module"
+      src="{{ url_for('static', filename='js/add_module_worker.js') }}"
+    ></script>
+
+    <!-- Подключение CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='/css/style_add_module.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Добавить модуль</h1>
+    <form
+      action="/add"
+      method="POST"
+      id="moduleForm"
+      enctype="multipart/form-data"
+    >
+      <label for="module_name">Название модуля:</label>
+      <input type="text" id="module_name" name="module_name" required />
+
+      <label for="positions">Должности:</label>
+      <select name="positions" id="positions" required>
+        <option value="position1">Должность 1</option>
+        <option value="position2">Должность 2</option>
+        <option value="position3">Должность 3</option>
+        <option value="position4">Должность 4</option>
+      </select>
+
+      <label for="activities">Перечень мероприятий:</label>
+      <div id="activities">
+        <div class="activity" id="activity_1">
+          <label for="activity_name_1">Наименование мероприятия:</label>
+          <input
+            type="text"
+            id="activity_name_1"
+            name="activity_name[]"
+            required
+          />
+
+          <label for="activity_type_1">Тип мероприятия:</label>
+          <select name="activity_type[]" id="activity_type_1" required>
+            <option value="theory">Теория</option>
+            <option value="practice">Практика</option>
+          </select>
+
+          <label for="activity_content_1">Содержание мероприятия:</label>
+          <textarea
+            name="activity_content[]"
+            id="activity_content_1"
+            rows="4"
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <button type="button" id="addButton">Добавить мероприятие</button>
+      <button type="button" id="removeButton" style="background-color: #6c757d">
+        Убрать мероприятие
+      </button>
+      <br /><br />
+      <label for="data_source">Источник данных:</label>
+      <input type="text" id="data_source" name="data_source" required />
+
+      <label for="duration">Срок прохождения модуля (в днях):</label>
+      <input type="number" id="duration" name="duration" required />
+
+      <label for="responsible">Ответственное лицо:</label>
+      <input type="text" id="responsible" name="responsible" required />
+
+      <label>Материалы для мероприятий:</label>
+      <div id="file-inputs-container">
+        <div class="file-input" id="file_input_1">
+          <input
+            type="file"
+            id="materials_1"
+            name="materials[]"
+            accept=".pdf,.pptx,.xlsx,.docx,.jpg,.mkv,.avi,.mp,.url"
+          />
+        </div>
+      </div>
+      <button
+        type="button"
+        id="add-file-input"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 35px;
+          height: 35px;
+          background-color: #4caf50;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          margin-top: 10px;
+        "
+        title="Добавить файл"
+      >
+        +
+      </button>
+
+      <br /><br />
+
+      <button type="submit">Добавить модуль</button>
+    </form>
+    <a href="/" class="btn-secondary">Назад на главную</a>
+  </body>
+</html>

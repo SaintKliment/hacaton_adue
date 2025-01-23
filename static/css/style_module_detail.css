@@ -1,0 +1,17 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa; /* Светлый фон */
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  color: #28a745; /* Зеленый цвет заголовка */
+}
+
+.module-details {
+  background-color: #ffffff; /* Белый фон для деталей */
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

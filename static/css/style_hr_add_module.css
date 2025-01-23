@@ -1,0 +1,55 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa; /* Светлый фон */
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  color: #4caf50; /* Зеленый цвет заголовка */
+  text-align: center;
+}
+
+form {
+  background-color: #ffffff; /* Белый фон формы */
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto; /* Центрирование формы */
+}
+
+label {
+  color: #333333; /* Темный текст для меток */
+  font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0 20px;
+  border: 1px solid #cccccc; /* Светло-серый бордер */
+  border-radius: 4px;
+  box-sizing: border-box; /* Учет отступов и границ в ширине */
+}
+
+button {
+  background-color: #4caf50; /* Зеленая кнопка */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049; /* Темно-зеленый при наведении */
+}
+
+.file-input {
+  margin-bottom: 10px; /* Отступ для файлового ввода */
+}

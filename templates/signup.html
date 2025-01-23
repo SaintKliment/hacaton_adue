@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Регистрация</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='/css/style_sign.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Регистрация</h1>
+      <p class="lead">Заполните форму для регистрации</p>
+
+      <!-- Форма регистрации -->
+      <form action="/signup" method="POST">
+        <div class="form-group">
+          <label for="fullname">ФИО</label>
+          <input
+            type="text"
+            class="form-control"
+            id="fullname"
+            name="full_name"
+            placeholder="Введите ваше ФИО"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            name="email"
+            placeholder="Введите ваш email"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Пароль</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            placeholder="Введите пароль"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="position">Должность</label>
+          <input
+            type="text"
+            class="form-control"
+            id="position"
+            name="position"
+            placeholder="Введите вашу должность"
+            required
+          />
+        </div>
+
+        <!-- Кнопка отправки формы -->
+        <button type="submit" class="custom-btn btn-green">
+          <span>Зарегистрироваться</span>
+        </button>
+      </form>
+
+      <!-- Ссылка для возврата на страницу входа -->
+      <div class="back-link">Уже есть аккаунт? <a href="/login">Войти</a></div>
+    </div>
+  </body>
+</html>

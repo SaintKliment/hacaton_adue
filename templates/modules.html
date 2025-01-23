@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Список модулей</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='/css/style_modules.css') }}"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex; /* Используем flexbox для выравнивания */
+      }
+
+      .sidebar {
+        width: 250px; /* Ширина сайдбара */
+        padding: 20px;
+        background-color: #f4f4f4; /* Цвет фона */
+        border-right: 1px solid #ccc; /* Граница справа */
+        height: 100vh; /* Высота сайдбара на всю страницу */
+        box-sizing: border-box; /* Учитываем padding в ширине */
+      }
+
+      .modules-container {
+        flex-grow: 1; /* Занимает оставшееся место */
+        padding: 20px 40px; /* Внутренние отступы (по бокам больше) */
+      }
+
+      h1 {
+        color: #333; /* Цвет заголовка */
+        margin-bottom: 20px; /* Отступ снизу */
+      }
+
+      .module {
+        margin-bottom: 15px; /* Отступ между модулями */
+        padding: 15px; /* Внутренние отступы для модулей */
+        border-radius: 5px; /* Скругление углов */
+        transition: background-color 0.3s, transform 0.2s; /* Плавный переход цвета и эффекта наведения */
+      }
+
+      .module a {
+        color: white;
+        text-decoration: none;
+        font-weight: bold; /* Жирный текст для ссылок */
+      }
+
+      .module:hover {
+        opacity: 0.9; /* Эффект при наведении на модуль */
+        transform: scale(1.02); /* Легкое увеличение при наведении */
+      }
+
+      input[type="text"],
+      select {
+        width: calc(
+          100% - 20px
+        ); /* Ширина инпутов и селекта с учетом отступов */
+        padding: 10px; /* Внутренние отступы */
+        margin-bottom: 15px; /* Отступ снизу */
+        border: 1px solid #ccc; /* Граница */
+        border-radius: 4px; /* Скругление углов */
+      }
+
+      label {
+        display: block; /* Блочный элемент для меток */
+        margin-bottom: 5px; /* Отступ снизу меток */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>Меню</h2>
+      <input type="text" placeholder="Поиск..." />
+      <div>
+        <label> <input type="checkbox" id="archive-checkbox" /> Архив </label>
+      </div>
+      <div>
+        <label for="status-select">Статус:</label>
+        <select id="status-select">
+          <option value="">Выберите статус</option>
+          <option value="черновик">Черновик</option>
+          <option value="в работе">В работе</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modules-container">
+      <h1>Список модулей</h1>
+      {% for module in modules %}
+      <div
+        class="module"
+        style="background-color:
+                {% if module.duration_develop < 7 %} red  
+                {% elif module.state == 'черновик' %} yellow
+                {% elif module.state == 'новый' %} green
+                {% else %} gray
+                {% endif %};"
+      >
+        <a
+          href="{{ url_for('module_detail', module_id=module.id) }}"
+          style="color: white; text-decoration: none"
+        >
+          {{ module.code_name }}
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </body>
+</html>

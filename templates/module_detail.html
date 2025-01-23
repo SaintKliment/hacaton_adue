@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Информация о модуле</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='/css/style_module_detail.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Информация о модуле: {{ module.module_name }}</h1>
+
+    <div class="module-details">
+      <p><strong>CodeName:</strong> {{ module.code_name }}</p>
+      <p>
+        <strong>responsible_user_ids:</strong> {{ module.responsible_user_ids }}
+      </p>
+      <p><strong>duration_develop:</strong> {{ module.duration_develop }}</p>
+
+      <p><strong>ID:</strong> {{ module.id }}</p>
+      <p><strong>Название:</strong> {{ module.module_name }}</p>
+      <p><strong>Важность:</strong> {{ module.importance }}</p>
+      <p><strong>Состояние:</strong> {{ module.state }}</p>
+
+      <p><strong>Positions:</strong> {{ module.positions }}</p>
+      <p><strong>activities:</strong> {{ module.activities }}</p>
+      <p><strong>data_source:</strong> {{ module.data_source }}</p>
+      <p><strong>duration:</strong> {{ module.duration }}</p>
+      <p><strong>responsible:</strong> {{ module.responsible }}</p>
+      <p><strong>materials:</strong> {{ module.materials }}</p>
+
+      <p>
+        <strong>Срок разработки:</strong> {{ module.duration_develop }} дней
+      </p>
+    </div>
+  </body>
+</html>

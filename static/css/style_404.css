@@ -1,0 +1,26 @@
+body {
+  background-color: #f8f9fa; /* Светло-серый фон */
+}
+.error-container {
+  text-align: center;
+  margin-top: 100px;
+  color: #343a40; /* Темно-серый текст */
+}
+.error-code {
+  font-size: 100px;
+  font-weight: bold;
+  color: #28a745; /* Зеленый цвет */
+}
+.error-message {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.btn-custom:hover {
+  background-color: #218838; /* Темно-зеленый при наведении */
+}
+
+.btn-custom {
+  background-color: #28a745; /* Зеленая кнопка */
+  color: white;
+}
