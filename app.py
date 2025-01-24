@@ -14,6 +14,7 @@ from models.Module import Module
 from flask_socketio import SocketIO, emit
 from flask_apscheduler import APScheduler  
 from datetime import datetime, timedelta
+import time
 
 
 app = Flask(__name__)
@@ -60,8 +61,8 @@ def signup():
         position = request.form.get('position', '')
 
         # Проверяем, существует ли пользователь с указанным email
-        user_with_email = User.query.filter_by(email=email).first()
-
+        User.query.filter_by(email=email).first() # user_with_email = 
+        
         # Проверяем, существует ли хотя бы один пользователь с таким email
         email_exists = User.query.filter_by(email=email).count() > 0
 
@@ -109,12 +110,10 @@ def logout():
 
 ##########################################INDEX LOGIC START##############################################
 
-count_modules = 0
-
 @app.route('/')
 @login_required
 def index():
-    global count_modules
+    count_modules = 0
     modules = Module.query.all()
     count_modules = Module.query.filter(Module.state == 'новый').count()
     user_logged_in = 'user_id' in session  
@@ -156,7 +155,7 @@ def add_module():
         
         # Получаем список должностей и преобразуем их в русские названия
         positions = [positions_dict.get(pos, pos) for pos in request.form.getlist('positions')]
-    
+        
         # Формируем список мероприятий и преобразуем типы в русские названия
         activities = [
             {
@@ -222,7 +221,7 @@ def add_module():
 @app.route('/draft', methods=['GET', 'POST'])
 @login_required
 def draft():
-    return render_template('draft.html')
+    return render_template('draft.html', positions_dict=positions_dict)
 ##########################################DRAFT FOR WORKER LOGIC END##############################################
 
 
@@ -286,7 +285,7 @@ def hr_add():
 @app.route('/view_modules', methods=['GET'])
 @login_required
 def view_modules():
-    count_modules = Module.query.filter(Module.state == 'новый').update({'state': 'новый просмотрен'})
+    Module.query.filter(Module.state == 'новый').update({'state': 'новый просмотрен'})
     db.session.commit()
     modules = Module.query.filter(Module.state.in_( ['новый просмотрен', 'черновик'] )).all()
     arch_modules = Module.query.filter(Module.state.in_( ['выполнен'])).all()
@@ -351,9 +350,58 @@ def joint_development_detail(module_id):
     global positions_dict
     global activities_dict
 
+    # Обновляем состояние только для текущего модуля
+    if module.state == 'новый просмотрен':
+        module.state = 'черновик'
+        db.session.commit()
+    
     return render_template('joint_module_develop.html', module=module, positions_dict=positions_dict, activities_dict=activities_dict)
 
 ##########################################JOINT DEVELOPMENT  LOGIC END####################################################
+
+
+##########################################JOINT DEVELOPMENT SOCKET LOGIC START####################################################
+
+@socketio.on('update_joint_const_inputs')
+def handle_update_joint_const_inputs(data):
+    module_id = data.get('module_id')
+    new_name = data.get('module_name')
+    new_source = data.get('data_source')
+    new_duration = data.get('duration')
+    new_responsible = data.get('responsible')
+    selected_positions = data.get('selectedPositions', [])
+    
+    new_duration = int(new_duration) if new_duration else None
+    
+    MAX_INT = 1000000 
+    MIN_INT = 1   
+
+    # Проверка на допустимость значения для duration
+    if new_duration is not None:
+        if new_duration > MAX_INT or new_duration < MIN_INT:
+            new_duration = None
+
+    # Обновление записи в БД
+    module = Module.query.get(module_id)
+    if module:
+        module.module_name = new_name
+        module.data_source = new_source 
+        module.duration = new_duration 
+        module.responsible = new_responsible 
+        module.positions = selected_positions
+        db.session.commit()
+        
+        # Рассылка обновленных данных всем клиентам
+        socketio.emit('const_fiedls', {
+            'module_id': module_id,
+            'module_name': new_name,
+            'data_source': new_source,
+            'duration': new_duration,
+            'responsible': new_responsible,
+            'selected_positions': selected_positions  # Отправка выбранных позиций
+        })
+
+##########################################JOINT DEVELOPMENT SOCKET LOGIC END####################################################
 
 if __name__ == '__main__':
     scheduler.init_app(app)

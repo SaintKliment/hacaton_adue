@@ -32,11 +32,10 @@
       <input type="text" id="module_name" name="module_name" required />
 
       <label for="positions">Должности:</label>
-      <select name="positions" id="positions" required>
-        <option value="position1">Должность 1</option>
-        <option value="position2">Должность 2</option>
-        <option value="position3">Должность 3</option>
-        <option value="position4">Должность 4</option>
+      <select name="positions" id="positions" multiple required>
+        {% for key, value in positions_dict.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
       </select>
 
       <label for="activities">Перечень мероприятий:</label>

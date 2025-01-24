@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Добавить модуль</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/joint_module_develop.css') }}"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h1>Добавить модуль</h1>
+    <form
+      action="{{ url_for('joint_development_detail', module_id=module.id) }}"
+      method="POST"
+      id="moduleForm"
+      enctype="multipart/form-data"
+    >
+      <!-- Название модуля -->
+      <label for="module_name">Название модуля:</label>
+      <input
+        type="text"
+        id="module_name"
+        name="module_name"
+        required
+        value="{{ module.module_name or '' }}"
+        oninput="sendConstInputs()"
+      />
+
+      <!-- Код модуля (неизменяемое поле) -->
+      <label for="code_name">Код модуля:</label>
+      <p class="readonly-field" id="code_name">{{ module.code_name or '' }}</p>
+
+      <!-- Состояние (неизменяемое поле) -->
+      <label for="state">Состояние:</label>
+      <p class="readonly-field" id="state_value">{{ module.state or '' }}</p>
+
+      <!-- Срок разработки (неизменяемое поле) -->
+      <label for="duration_develop">Срок разработки (в днях):</label>
+      <p class="readonly-field" id="duration_develop_value">
+        {{ module.duration_develop or '' }}
+      </p>
+
+      <!-- Должности (многократный выбор) -->
+      <label for="positions">Должности:</label>
+      <select name="positions" id="positions" multiple required onclick="sendConstInputs()">
+        {% for position_key, position_name in positions_dict.items() %}
+            <option value="{{ position_key }}" 
+                    {% if module.positions and position_key in module.positions %} 
+                        selected 
+                    {% endif %}>
+                {{ position_name }}
+            </option>
+        {% endfor %}
+    </select>
+    
+    
+
+      <!-- Перечень мероприятий -->
+      <label for="activities">Перечень мероприятий:</label>
+      <div id="activities">
+        <div class="activity" id="activity_1">
+          <label for="activity_name_1">Наименование мероприятия:</label>
+          <input
+            type="text"
+            id="activity_name_1"
+            name="activity_name[]"
+            required
+          />
+
+          <label for="activity_type_1">Тип мероприятия:</label>
+          <select name="activity_type[]" id="activity_type_1" required onchange="sendConstInputs()">
+            {% for activity_key, activity_type in activities_dict.items() %}
+                <option value="{{ activity_key }}" {% if activity_key == 'theory' %}selected{% endif %}>
+                    {{ activity_type }}
+                </option>
+            {% endfor %}
+        </select>
+        
+
+          <label for="activity_content_1">Содержание мероприятия:</label>
+          <textarea
+            name="activity_content[]"
+            id="activity_content_1"
+            rows="4"
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <button type="button" onclick="addActivityAndNotify()">
+        Добавить мероприятие
+      </button>
+      <button
+        type="button"
+        onclick="removeActivityAndNotify()"
+        style="background-color: #6c757d"
+      >
+        Убрать мероприятие
+      </button>
+
+      <!-- Источник данных -->
+      <br /><br />
+      <label for="data_source">Источник данных:</label>
+      <input
+        type="text"
+        id="data_source"
+        name="data_source"
+        required
+        value="{{ module.data_source or '' }}"
+        oninput="sendConstInputs()"
+      />
+
+      <!-- Срок прохождения модуля -->
+      <label for="duration">Срок прохождения модуля (в днях):</label>
+      <input
+        type="number"
+        id="duration"
+        name="duration"
+        required
+        value="{{ module.duration or '' }}"
+        oninput="sendConstInputs()"
+      />
+
+      <!-- Ответственное лицо -->
+      <label for="responsible">Ответственное лицо:</label>
+      <input
+        type="text"
+        id="responsible"
+        name="responsible"
+        required
+        value="{{ module.responsible or '' }}"
+        oninput="sendConstInputs()"
+      />
+
+      <!-- Материалы для мероприятий -->
+      <label>Материалы для мероприятий:</label>
+      <div id="file-inputs-container">
+        <div class="file-input" id="file_input_1">
+          <input
+            type="file"
+            id="materials_1"
+            name="materials[]"
+            accept=".pdf,.pptx,.xlsx,.docx,.jpg,.mkv,.avi,.mp,.url"
+          />
+        </div>
+      </div>
+
+      <!-- Кнопка для добавления файлов -->
+      <button
+        type="button"
+        id="add-file-input"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 35px;
+          height: 35px;
+          background-color: #4caf50;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          margin-top: 10px;
+        "
+        title="Добавить файл"
+      >
+        +
+      </button>
+
+      <!-- Кнопка отправки формы -->
+      <br /><br />
+      <button type="submit">Отправить модуль на согласование</button>
+    </form>
+
+    <!-- Ссылка на главную -->
+    <a href="/" class="btn-secondary">Назад на главную</a>
+
+    <script src="{{ url_for('static', filename='js/joint_develop.js') }}"></script>
+  </body>
+</html>

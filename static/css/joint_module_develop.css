@@ -1,0 +1,101 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 20px;
+}
+
+textarea {
+  resize: none;
+}
+
+h1 {
+  color: #4caf50;
+  text-align: center;
+}
+
+form {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+label {
+  color: #333333;
+  font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0 20px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  display: inline-block;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.activity {
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f8f9fa;
+}
+
+#activities {
+  margin-bottom: 20px;
+}
+
+#activities .activity:nth-child(odd) {
+  background-color: #e9f5e9;
+}
+
+.file-input {
+  margin-bottom: 10px;
+}
+
+#add-file-input:hover {
+  background-color: #45a049;
+}
+
+.readonly-field {
+  background-color: #f1f1f1;
+  padding: 10px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  color: #777;
+}

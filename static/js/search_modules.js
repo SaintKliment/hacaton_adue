@@ -1,16 +1,14 @@
 /////////////////////////////////// SEARCH START///////////////////////////////////////////////////////////////////////////
+
 document.addEventListener("DOMContentLoaded", function () {
-  const archiveCheckbox = document.getElementById("archive-checkbox");
   const statusSelect = document.getElementById("status-select");
   const searchInput = document.querySelector('input[placeholder="Поиск..."]');
 
   // Добавляем обработчики событий
-  archiveCheckbox.addEventListener("change", updateModuleVisibility);
   statusSelect.addEventListener("change", updateModuleVisibility);
   searchInput.addEventListener("keyup", updateModuleVisibility);
 
   function updateModuleVisibility() {
-    const isChecked = archiveCheckbox.checked; // Состояние чекбокса
     const selectedStatus = statusSelect.value.trim(); // Выбранный статус
     const searchInputValue = searchInput.value.toLowerCase(); // Значение из поля поиска
     const modules = document.querySelectorAll(".module"); // Все модули
@@ -22,13 +20,8 @@ document.addEventListener("DOMContentLoaded", function () {
       // Проверяем видимость модуля на основе условий
       let shouldDisplay = true;
 
-      // Если чекбокс не отмечен и модуль со статусом 'выполнен', скрываем его
-      if (!isChecked && moduleState === "выполнен") {
-        shouldDisplay = false;
-      }
-
-      // Если чекбокс не отмечен, применяем фильтрацию по статусу и поиску
-      if (!isChecked && selectedStatus && moduleState !== selectedStatus) {
+      // Применяем фильтрацию по статусу
+      if (selectedStatus && moduleState !== selectedStatus) {
         shouldDisplay = false; // Скрываем модуль, если статус не совпадает
       }
 
@@ -41,46 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
       module.style.display = shouldDisplay ? "block" : "none";
     });
   }
-});
-
-/////////////////////////////////// SEARCH END///////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////ARCHIVE SEARCH START///////////////////////////////////////////////////////////////////////////
-document.addEventListener("DOMContentLoaded", function () {
-  const archiveCheckbox = document.getElementById("archive-checkbox");
-  const statusSelect = document.getElementById("status-select");
-
-  // Добавляем обработчик события на чекбокс
-  archiveCheckbox.addEventListener("change", toggleArchive);
-
-  function toggleArchive() {
-    const isChecked = archiveCheckbox.checked;
-    const selectedStatus = statusSelect.value.trim(); // Получаем выбранный статус
-    const modules = document.querySelectorAll(".module"); // Получаем все модули
-
-    modules.forEach((module) => {
-      const state = module.getAttribute("data-state").trim(); // Получаем состояние модуля
-
-      // Если чекбокс отмечен, показываем только модули со статусом 'выполнен'
-      if (isChecked) {
-        if (state === "выполнен") {
-          module.style.display = "block"; // Показываем модуль, если статус 'выполнен'
-        } else {
-          module.style.display = "none"; // Скрываем другие модули
-        }
-      } else {
-        // Если чекбокс не отмечен, применяем фильтрацию по выбранному статусу
-        if (selectedStatus === "" || state === selectedStatus) {
-          module.style.display = "block"; // Показываем модуль, если статус совпадает или ничего не выбрано
-        } else {
-          module.style.display = "none"; // Скрываем модуль, если статус не совпадает
-        }
-      }
-    });
-  }
-
-  // Дополнительно добавим обработчик для селекта, чтобы обновлять отображение при изменении статуса
-  statusSelect.addEventListener("change", toggleArchive);
 });
 
 ///////////////////////////////////ARCHIVE SEARCH END///////////////////////////////////////////////////////////////////////////
