@@ -533,7 +533,17 @@ def handle_update_activity(data):
 
     emit('activity_updated', data, broadcast=True, include_self=False)
 
+
 ##########################################ACTIVITIES SOCKET LOGIC END####################################################
+
+##########################################downloading updates start############################################################################
+
+@socketio.on("connect")
+def on_connect():
+    emit("reload_page", broadcast=True, include_self=False)
+
+
+##############################################downloading updates end########################################################################
 
 #########################################api for load activities start#######################################################
 
