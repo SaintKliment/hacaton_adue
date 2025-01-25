@@ -67,17 +67,20 @@
             type="text"
             id="activity_name_1"
             name="activity_name[]"
+            value=" {{module_activities_name}}"
             required
+            oninput="sendConstInputs()"
           />
 
           <label for="activity_type_1">Тип мероприятия:</label>
           <select name="activity_type[]" id="activity_type_1" required onchange="sendConstInputs()">
-            {% for activity_key, activity_type in activities_dict.items() %}
-                <option value="{{ activity_key }}" {% if activity_key == 'theory' %}selected{% endif %}>
-                    {{ activity_type }}
-                </option>
-            {% endfor %}
-        </select>
+              {% for activity_key, activity_type in activities_dict.items() %}
+                  <option value="{{ activity_key }}"
+                      {% if activity_key == module_activities_type %}selected{% endif %}>
+                      {{ activity_type }}
+                  </option>
+              {% endfor %}
+          </select>          
         
 
           <label for="activity_content_1">Содержание мероприятия:</label>
@@ -86,7 +89,8 @@
             id="activity_content_1"
             rows="4"
             required
-          ></textarea>
+            oninput="sendConstInputs()"
+          > {{module_activities_content}}</textarea>
         </div>
       </div>
 

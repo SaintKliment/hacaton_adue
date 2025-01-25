@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, jsonify, url_for, f
 from flask_mail import Mail, Message
 import os
 import json
+from models.Activity import Activity
 from werkzeug.utils import secure_filename 
 from flask_bootstrap import Bootstrap
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
@@ -62,7 +63,7 @@ def signup():
 
         # Проверяем, существует ли пользователь с указанным email
         User.query.filter_by(email=email).first() # user_with_email = 
-        
+
         # Проверяем, существует ли хотя бы один пользователь с таким email
         email_exists = User.query.filter_by(email=email).count() > 0
 
@@ -354,8 +355,18 @@ def joint_development_detail(module_id):
     if module.state == 'новый просмотрен':
         module.state = 'черновик'
         db.session.commit()
-    
-    return render_template('joint_module_develop.html', module=module, positions_dict=positions_dict, activities_dict=activities_dict)
+
+    module_activities_name = (
+        module.activities[0]['name'].strip() if module.activities and module.activities[0].get('name') else ""
+    )
+    module_activities_type = (
+        module.activities[0]['type'].strip() if module.activities and module.activities[0].get('type') else ""
+    )
+    module_activities_content = (
+        module.activities[0]['content'].strip() if module.activities and module.activities[0].get('content') else ""
+    )
+
+    return render_template('joint_module_develop.html',module_activities_name=module_activities_name,module_activities_type=module_activities_type, module_activities_content=module_activities_content,  module=module, positions_dict=positions_dict, activities_dict=activities_dict)
 
 ##########################################JOINT DEVELOPMENT  LOGIC END####################################################
 
@@ -370,7 +381,18 @@ def handle_update_joint_const_inputs(data):
     new_duration = data.get('duration')
     new_responsible = data.get('responsible')
     selected_positions = data.get('selectedPositions', [])
+
+    activity_name_1 = data.get('activity_name_1')
+    activity_type_1 = data.get('activity_type_1')
+    activity_content_1 = data.get('activity_content_1')
     
+    activities = [{
+    "name": activity_name_1,
+    "type": activity_type_1,
+    "content": activity_content_1
+}]
+
+
     new_duration = int(new_duration) if new_duration else None
     
     MAX_INT = 1000000 
@@ -389,8 +411,9 @@ def handle_update_joint_const_inputs(data):
         module.duration = new_duration 
         module.responsible = new_responsible 
         module.positions = selected_positions
+        module.activities = activities
         db.session.commit()
-        
+
         # Рассылка обновленных данных всем клиентам
         socketio.emit('const_fiedls', {
             'module_id': module_id,
@@ -398,8 +421,146 @@ def handle_update_joint_const_inputs(data):
             'data_source': new_source,
             'duration': new_duration,
             'responsible': new_responsible,
-            'selected_positions': selected_positions  # Отправка выбранных позиций
+            'selected_positions': selected_positions,
+            'activities': activities,
         })
+
+##########################################ACTIVITIES SOCKET LOGIC START####################################################
+
+@socketio.on('add_activity')
+def handle_add_activity(data):
+    activityCount = data['activityCount']
+    module_id = data['moduleId']
+
+    existing_activity = Activity.query.filter_by(module_id=module_id).first()
+
+    if existing_activity:
+        # Если запись найдена, обновляем поле activityCount
+        existing_activity.activityCount = activityCount
+    else:
+        # Если запись не найдена, создаём новую
+        new_activity = Activity(
+            module_id=module_id,
+            activityCount=activityCount,
+        )
+
+        db.session.add(new_activity)
+    
+    db.session.commit()
+    
+    emit('activity_added', data, broadcast=True, include_self=False)
+
+@socketio.on('remove_activity')
+def handle_remove_activity(data):
+    module_id = data['moduleId']
+
+    # Ищем запись с указанным module_id
+    existing_activity = Activity.query.filter_by(module_id=module_id).first()
+
+    if existing_activity:
+        # Проверяем, можно ли уменьшить activityCount
+        if existing_activity.activityCount > 0:
+            existing_activity.activityCount -= 1
+            db.session.commit()
+
+            # Рассылка другим пользователям обновлённых данных
+            emit('activity_removed', {
+                'moduleId': module_id,
+                'activityCount': existing_activity.activityCount
+            }, broadcast=True, include_self=False)
+        else:
+            # Если activityCount уже 0, уведомляем клиента (если требуется)
+            emit('error', {
+                'message': f"Activity count for module_id {module_id} is already 0."
+            }, to=request.sid)  # Отправляем только вызывающему клиенту
+    else:
+        # Если запись не найдена, уведомляем клиента об ошибке
+        emit('error', {
+            'message': f"No activity found for module_id {module_id}."
+        }, to=request.sid)
+
+    emit('activity_removed', data, broadcast=True, include_self=False)
+
+# Обработка изменений в инпутах
+@socketio.on('update_activity')
+def handle_update_activity(data):
+    module_id = data['moduleId']
+    activity_id = data['activityId']
+    activity_id = activity_id[-1]
+    field = data['field']
+    value = data['value']
+
+    # Ищем запись с данным module_id и activity_id
+    activity = Activity.query.filter_by(module_id=module_id).first()
+  
+    if activity:
+        column_name = field  # Получаем имя колонки из поля 'field'
+
+        if hasattr(activity, column_name):  # Проверяем, существует ли такая колонка
+            # Загружаем текущие значения из колонки (если они есть)
+            current_values = getattr(activity, column_name, None)  # Если ничего нет, значение None
+            if current_values is None:
+                current_values = []  # Если пусто, инициализируем пустой список
+            else:
+                try:
+                    current_values = json.loads(current_values)  # Преобразуем строку в список
+                except json.JSONDecodeError:
+                    current_values = []  # В случае ошибки парсинга берем пустой список
+
+            # Формируем новое значение как комбинацию value и activity_id
+            new_value = f"{value}_{activity_id}"
+
+            # Проверяем, существует ли уже значение с суффиксом _activity.id
+            value_exists = any(val.endswith(f"_{activity_id}") for val in current_values)
+
+            if value_exists:
+                # Если такое значение уже есть, обновляем его
+                for i, val in enumerate(current_values):
+                    if val.endswith(f"_{activity_id}"):
+                        current_values[i] = new_value  # Обновляем значение
+                        break
+            else:
+                # Если значения нет, добавляем новое
+                current_values.append(new_value)
+
+            # Сохраняем обновленные значения обратно в колонку
+            setattr(activity, column_name, json.dumps(current_values))  # Преобразуем обратно в строку
+
+            # Сохраняем изменения в базе данных
+            db.session.commit()
+        else:
+            print(f"Колонка {column_name} не существует в модели Activity.")
+
+    emit('activity_updated', data, broadcast=True, include_self=False)
+
+##########################################ACTIVITIES SOCKET LOGIC END####################################################
+
+#########################################api for load activities start#######################################################
+
+@app.route('/get_activities/<int:module_id>', methods=['GET'])
+@login_required
+def get_activities(module_id):
+    
+    # Предположим, у вас есть модель Activity для хранения данных о действиях
+    activities = Activity.query.filter_by(module_id=str(module_id)).all()
+
+    activities_dicts = [
+        {
+            "id": activity.id,
+            "name": activity.name,
+            "type": activity.type,
+            "content": activity.content,
+            "activity_count": activity.activityCount,
+            "module_id": activity.module_id
+        }
+        for activity in activities
+    ]
+    
+    return activities_dicts
+
+
+
+#########################################api for load activities end#######################################################
 
 ##########################################JOINT DEVELOPMENT SOCKET LOGIC END####################################################
 
