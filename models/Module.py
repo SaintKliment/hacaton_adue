@@ -19,5 +19,7 @@ class Module(db.Model):
     responsible = db.Column(db.String(255), nullable=True)
     materials = db.Column(db.JSON, nullable=True) 
 
+    last_user_id = db.Column(db.String(255), nullable=True)
+
     def __repr__(self):
         return f"<Module {self.module_name}>"

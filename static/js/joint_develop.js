@@ -121,17 +121,6 @@ document.addEventListener("DOMContentLoaded", function () {
     .catch((error) => console.error("Fetch error:", error));
 });
 
-// Проверяем флаг из localStorage
-let reloaded = localStorage.getItem("reloaded");
-
-socket.on("reload_page", () => {
-  if (!reloaded) {
-    console.log("Новый пользователь подключился. Перезагрузка...");
-    localStorage.setItem("reloaded", "true"); // Устанавливаем флаг в localStorage
-    location.reload(); // Перезагружаем страницу
-  }
-});
-
 /////////////////////////////////////LOAD EXIST ACTIVITIES FROM DB END///////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////ADD ACTIVITY LOGIC START//////////////////////////////////////////////////////////////////

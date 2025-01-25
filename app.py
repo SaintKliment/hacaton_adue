@@ -15,7 +15,7 @@ from models.Module import Module
 from flask_socketio import SocketIO, emit
 from flask_apscheduler import APScheduler  
 from datetime import datetime, timedelta
-import time
+import re
 
 
 app = Flask(__name__)
@@ -375,6 +375,8 @@ def joint_development_detail(module_id):
 
 @socketio.on('update_joint_const_inputs')
 def handle_update_joint_const_inputs(data):
+    current_user_id = session['user_id']
+    
     module_id = data.get('module_id')
     new_name = data.get('module_name')
     new_source = data.get('data_source')
@@ -412,6 +414,7 @@ def handle_update_joint_const_inputs(data):
         module.responsible = new_responsible 
         module.positions = selected_positions
         module.activities = activities
+        module.last_user_id = current_user_id  
         db.session.commit()
 
         # Рассылка обновленных данных всем клиентам
@@ -431,6 +434,12 @@ def handle_update_joint_const_inputs(data):
 def handle_add_activity(data):
     activityCount = data['activityCount']
     module_id = data['moduleId']
+    current_user_id = session['user_id']
+    module = Module.query.filter_by(id=module_id).first()
+    module.last_user_id = current_user_id
+    db.session.commit()
+
+    
 
     existing_activity = Activity.query.filter_by(module_id=module_id).first()
 
@@ -453,10 +462,55 @@ def handle_add_activity(data):
 @socketio.on('remove_activity')
 def handle_remove_activity(data):
     module_id = data['moduleId']
+    current_user_id = session['user_id']
+    module = Module.query.filter_by(id=module_id).first()
+    module.last_user_id = current_user_id
+    db.session.commit()
 
     # Ищем запись с указанным module_id
     existing_activity = Activity.query.filter_by(module_id=module_id).first()
+    pattern = f"_{existing_activity.activityCount}"  # Например: "_3"
 
+    
+    def remove_invalid_entries(field, pattern):
+        if field:
+            # Разделяем строку на элементы, если это строка в формате списка
+            entries = field.strip('[]').split(",") if isinstance(field, str) else field
+            non_matching_entries = [entry for entry in entries if not re.search(pattern, entry)]  # Не подходит под паттерн
+
+            # Формируем строку из оставшихся элементов и оборачиваем в скобки
+            updated_field = "[" + ",".join(non_matching_entries) + "]" if non_matching_entries else "[]"
+
+            # # Выводим для диагностики
+            # print(f"Исходное поле: {field}")
+            # print(f"Строки без отобранных по паттерну: {non_matching_entries}")
+            # print(f"Обновленное поле: {updated_field}")
+
+            # Возвращаем обновленную строку
+            return updated_field
+        return field
+
+    # Применяем к каждому полю
+    if existing_activity.name:
+        # print("Обрабатываем поле 'name'")
+        updated_name = remove_invalid_entries(existing_activity.name, pattern)
+        existing_activity.name = updated_name  # Обновляем значение в объекте
+
+    if existing_activity.type:
+        # print("Обрабатываем поле 'type'")
+        updated_type = remove_invalid_entries(existing_activity.type, pattern)
+        existing_activity.type = updated_type  # Обновляем значение в объекте
+
+    if existing_activity.content:
+        # print("Обрабатываем поле 'content'")
+        updated_content = remove_invalid_entries(existing_activity.content, pattern)
+        existing_activity.content = updated_content  # Обновляем значение в объекте
+
+
+        # Сохраняем изменения в базе
+        db.session.commit()
+
+    
     if existing_activity:
         # Проверяем, можно ли уменьшить activityCount
         if existing_activity.activityCount > 0:
@@ -489,6 +543,11 @@ def handle_update_activity(data):
     activity_id = activity_id[-1]
     field = data['field']
     value = data['value']
+
+    current_user_id = session['user_id']
+    module = Module.query.filter_by(id=module_id).first()
+    module.last_user_id = current_user_id
+    db.session.commit()
 
     # Ищем запись с данным module_id и activity_id
     activity = Activity.query.filter_by(module_id=module_id).first()
@@ -535,15 +594,6 @@ def handle_update_activity(data):
 
 
 ##########################################ACTIVITIES SOCKET LOGIC END####################################################
-
-##########################################downloading updates start############################################################################
-
-@socketio.on("connect")
-def on_connect():
-    emit("reload_page", broadcast=True, include_self=False)
-
-
-##############################################downloading updates end########################################################################
 
 #########################################api for load activities start#######################################################
 
