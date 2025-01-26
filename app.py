@@ -3,6 +3,7 @@ from flask_mail import Mail, Message
 import os
 import json
 from models.Activity import Activity
+from validate import validate_module_data, validate_registration_data
 from werkzeug.utils import secure_filename 
 from flask_bootstrap import Bootstrap
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
@@ -61,6 +62,13 @@ def signup():
         password = request.form['password']
         position = request.form.get('position', '')
 
+                # Валидация данных
+        validation_error = validate_registration_data(full_name, email, password)
+        if validation_error:
+            flash(validation_error, 'danger')
+            return render_template('signup.html')
+
+
         # Проверяем, существует ли пользователь с указанным email
         User.query.filter_by(email=email).first() # user_with_email = 
 
@@ -97,8 +105,10 @@ def login():
             session['user_name'] = user.full_name
             flash("Вход выполнен успешно!", "success")
             return redirect(url_for('index'))
+        
         flash("Неверный email или пароль.", "danger")
     return render_template('login.html')
+
 
 # Выход
 @app.route('/logout')
@@ -187,6 +197,12 @@ def add_module():
     
                         # Сохраняем файл
                         file.save(filename)
+
+        validation_error = validate_module_data(module_name, positions, activities, data_source, duration, responsible, materials)
+        if validation_error:
+            flash(validation_error, 'danger')
+            return render_template('add_module.html', positions_dict=positions_dict)
+        
     
         new_module = Module(
             module_name=module_name,
@@ -295,7 +311,7 @@ def view_modules():
 @app.route('/module/<int:module_id>', methods=['GET'])
 @login_required
 def module_detail(module_id):
-    module = Module.query.get_or_404(module_id)  # Получаем модуль по ID или 404, если не найден
+    module = db.session.get(Module, module_id)  # Получаем модуль по ID или 404, если не найден
     
     responsible_user_ids_str = module.responsible_user_ids
     if not responsible_user_ids_str or responsible_user_ids_str == 'None':
@@ -347,7 +363,7 @@ def joint_development():
 @app.route('/joint_development/<int:module_id>', methods=['GET', 'POST'])
 @login_required
 def joint_development_detail(module_id):
-    module = Module.query.get_or_404(module_id)
+    module = db.session.get(Module, module_id)
     global positions_dict
     global activities_dict
 
@@ -406,7 +422,7 @@ def handle_update_joint_const_inputs(data):
             new_duration = None
 
     # Обновление записи в БД
-    module = Module.query.get(module_id)
+    module = db.session.get(Module, module_id)
     if module:
         module.module_name = new_name
         module.data_source = new_source 
@@ -623,6 +639,22 @@ def get_activities(module_id):
 #########################################api for load activities end#######################################################
 
 ##########################################JOINT DEVELOPMENT SOCKET LOGIC END####################################################
+
+
+
+##########################################SOGL LOGIC START####################################################
+
+@app.route('/modules/approval')
+@login_required
+def get_modules_approval():
+    # Получаем модули с state = "согласование"
+    modules = Module.query.filter_by(state="согласование").all()
+
+    # Рендерим HTML-шаблон и передаем данные
+    return render_template('modules_approval.html', modules=modules)
+
+
+##########################################SOGL LOGIC END####################################################
 
 if __name__ == '__main__':
     scheduler.init_app(app)

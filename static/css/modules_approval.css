@@ -1,0 +1,83 @@
+/* Общий стиль страницы */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f9f0; /* Светло-зеленый фон */
+  margin: 0;
+  padding: 0;
+}
+
+/* Контейнер для модулей */
+.modules-container {
+  max-width: 800px;
+  margin: 50px auto;
+  padding: 20px;
+  background: #ffffff; /* Белый фон для блока */
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Заголовок */
+h1 {
+  text-align: center;
+  color: #2d572c; /* Темно-зеленый */
+}
+
+/* Стиль модулей */
+.module {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #d8f3d8; /* Светло-зеленый */
+  border-radius: 6px;
+  transition: background-color 0.3s;
+}
+
+/* Ссылка с названием модуля */
+.module-link {
+  color: #255d25; /* Темно-зеленый */
+  text-decoration: none;
+  font-weight: bold;
+  flex-grow: 1;
+}
+
+/* Эффект при наведении */
+.module:hover {
+  background-color: #b8e6b8; /* Более темный зеленый */
+}
+
+/* Кнопка "Подробнее" */
+.btn-details {
+  padding: 5px 10px;
+  background-color: #4caf50; /* Зеленый цвет кнопки */
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+  margin-left: 10px;
+}
+
+/* Эффект при наведении на кнопку "Подробнее" */
+.btn-details:hover {
+  background-color: #45a045; /* Более темный зеленый */
+}
+
+/* Кнопка "Назад" */
+.btn-secondary {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #4caf50; /* Зеленый цвет кнопки */
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 6px;
+  text-align: center;
+  transition: background-color 0.3s;
+}
+
+/* Эффект при наведении на кнопку "Назад" */
+.btn-secondary:hover {
+  background-color: #45a045; /* Более темный зеленый */
+}

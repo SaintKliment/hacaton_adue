@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Список модулей для согласования</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='/css/modules_approval.css') }}"
+    />
+  </head>
+  <body>
+    <div class="modules-container">
+      <h1>Список модулей для согласования</h1>
+
+      {% for module in modules %}
+      <div class="module">
+        <a
+          href="{{ url_for('module_detail', module_id=module.id) }}"
+          class="module-link"
+        >
+          {{ module.code_name }}
+        </a>
+        <a
+          href="{{ url_for('module_detail', module_id=module.id) }}"
+          class="btn-details"
+          >Подробнее</a
+        >
+      </div>
+      {% endfor %}
+
+      <!-- Кнопка "Назад на главную" -->
+      <a href="/" class="btn-secondary">Назад на главную</a>
+    </div>
+  </body>
+</html>

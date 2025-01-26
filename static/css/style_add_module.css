@@ -99,3 +99,67 @@ button:hover {
   gap: 10px; /* Добавляем расстояние между кнопками */
   flex-wrap: wrap; /* Если кнопок слишком много, они будут переходить на следующую строку */
 }
+/* Стиль для контейнера, оборачивающего модальное окно */
+.modal-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center; /* Центрируем по горизонтали */
+  align-items: center; /* Центрируем по вертикали */
+  z-index: 1000; /* Высокий уровень, чтобы модальное окно было поверх других элементов */
+  background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+}
+
+/* Основной стиль модального окна */
+.modal {
+  display: block; /* Сделано для отображения */
+  position: relative;
+  max-width: 400px;
+  width: 100%;
+}
+
+/* Стиль содержимого модального окна */
+.modal-content {
+  background-color: #ff4d4d;
+  color: white;
+  padding: 30px;
+  border-radius: 8px;
+  text-align: center;
+  border: 2px solid #b30000;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: modalAppear 0.3s ease-out;
+}
+
+/* Кнопка закрытия */
+.close {
+  color: white;
+  font-size: 30px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.close:hover {
+  transform: rotate(90deg);
+}
+
+/* Анимация появления */
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

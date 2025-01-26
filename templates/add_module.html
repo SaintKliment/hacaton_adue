@@ -9,7 +9,7 @@
       type="module"
       src="{{ url_for('static', filename='js/add_module_worker.js') }}"
     ></script>
-
+    <script src="{{ url_for('static', filename='js/danger_modal.js') }}"></script>
     <!-- Подключение CSS -->
     <link
       rel="stylesheet"
@@ -17,6 +17,19 @@
     />
   </head>
   <body>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %} {% if message ==
+    "Источник данных содержит недопустимые символы" %}
+    <div id="errorModalWrapper" class="modal-wrapper">
+      <div id="errorModal" class="modal" style="display: block">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <p>{{ message }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %} {% endfor %} {% endif %} {% endwith %}
+
     <h1>Добавить модуль</h1>
     <form
       action="/add"
