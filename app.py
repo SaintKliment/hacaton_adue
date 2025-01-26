@@ -13,7 +13,7 @@ from functools import wraps
 from models.User import User
 from flask_migrate import Migrate
 from models.Module import Module
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 from flask_apscheduler import APScheduler  
 from datetime import datetime, timedelta
 import re
@@ -25,6 +25,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# app.config['TEMP_FOLDER'] = 'temp'  # Папка для черновиков
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Ограничение 16 МБ
 ALLOWED_EXTENSIONS = {'pdf', 'pptx', 'xlsx', 'docx', 'jpg', 'mkv', 'avi', 'mp', 'url'}
 app.config.from_object('config_smtp')  # Загрузка конфигурации из файла config.py
@@ -364,6 +365,18 @@ def joint_development():
 @login_required
 def joint_development_detail(module_id):
     module = db.session.get(Module, module_id)
+
+    if request.method == 'POST':
+        # Изменяем статус модуля
+        module.state = "согласование"
+        db.session.commit()
+
+        # Уведомляем всех пользователей о том, что модуль отправлен в согласование через сокет
+        socketio.emit('module_sent_for_approval', {'module_id': module_id}, room=f'module_{module_id}'  )
+
+        # Перенаправляем на страницу с уведомлением
+        return redirect(url_for('module_sent_page', module_id=module_id))
+
     global positions_dict
     global activities_dict
 
@@ -383,6 +396,20 @@ def joint_development_detail(module_id):
     )
 
     return render_template('joint_module_develop.html',module_activities_name=module_activities_name,module_activities_type=module_activities_type, module_activities_content=module_activities_content,  module=module, positions_dict=positions_dict, activities_dict=activities_dict)
+
+@app.route('/module_sent/<int:module_id>', methods=['GET'])
+@login_required
+def module_sent_page(module_id):
+    # Мы можем снова получить данные модуля, если нужно
+    module = Module.query.get_or_404(module_id)
+
+    return render_template('module_sent.html', module=module)
+
+@socketio.on('module_sent_for_approval')
+def handle_module_sent_for_approval(data):
+    module_id = data['module_id']
+    # Вы можете отправить сообщение всем клиентам, например, уведомление или обновление интерфейса
+    socketio.emit('update_module_status', {'module_id': module_id, 'status': 'согласование'}, broadcast=True)
 
 ##########################################JOINT DEVELOPMENT  LOGIC END####################################################
 
@@ -638,11 +665,120 @@ def get_activities(module_id):
 
 #########################################api for load activities end#######################################################
 
-##########################################JOINT DEVELOPMENT SOCKET LOGIC END####################################################
+
+##########################################JOINT uploaded_files SOCKET LOGIC start####################################################
+@app.route('/upload/<int:module_id>', methods=['POST'])
+def upload_file(module_id):
+
+    current_user_id = session['user_id']
+    module = Module.query.filter_by(id=module_id).first()
+    module.last_user_id = current_user_id
+    db.session.commit()
+
+    """Загрузка файлов во временную папку и синхронизация с другими пользователями"""
+    if 'materials[]' not in request.files:
+        return jsonify({'error': 'No files found'}), 400
+
+    files = request.files.getlist('materials[]')
+    uploaded_files = []
+
+    for file in files:
+        if file and allowed_file(file.filename):
+            # Сохраняем файл во временную папку
+            temp_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(temp_path)
+            uploaded_files.append(file.filename)
+            
+            module = Module.query.get_or_404(module_id)
+            # module.materials = (uploaded_files)
+            if isinstance(module.materials, str):
+                # Если это строка, преобразуем её в список
+                current_files = json.loads(module.materials)
+            elif isinstance(module.materials, list):
+                # Если это уже список, работаем с ним напрямую
+                current_files = module.materials
+            else:
+                # Если это что-то другое, например None, создаем пустой список
+                current_files = []
+
+            # Добавляем новые файлы в список, исключая дубли
+            for filename in uploaded_files:
+                if filename not in current_files:
+                    current_files.append(filename)
+
+            # Преобразуем обновленный список обратно в строку JSON
+            module.materials = json.dumps(current_files)
+
+            # Сохраняем обновленную информацию в базе данных
+            db.session.commit()
 
 
+            # Уведомляем других пользователей в комнате (по module_id)
+            socketio.emit('file_added', {'filename': file.filename}, room=f'module_{module_id}')
 
-##########################################SOGL LOGIC START####################################################
+    return jsonify({'uploaded_files': uploaded_files})
+
+@socketio.on('join_module')
+def on_join_module(data):
+    """Присоединяем пользователя к комнате (module_id)"""
+    module_id = data.get('module_id')
+    join_room(f'module_{module_id}')
+
+@socketio.on('file_removed')
+def handle_file_removed(data):
+    """Обработчик удаления файла"""
+    filename = data.get('filename')
+    module_id = data.get('module_id')
+
+    current_user_id = session['user_id']
+    module = Module.query.filter_by(id=module_id).first()
+    module.last_user_id = current_user_id
+    db.session.commit()
+    
+    # Удаляем файл из временной папки
+    temp_file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(temp_file_path):
+        os.remove(temp_file_path)
+
+
+    if isinstance(module.materials, str):
+        current_files = json.loads(module.materials)  # Если это строка, преобразуем в список
+    elif isinstance(module.materials, list):
+        current_files = module.materials  # Если это уже список
+    else:
+        current_files = []  # Если ничего нет, создаём пустой список
+
+    filename_to_remove = filename
+
+    # Удаляем файл из списка, если он там есть
+    if filename_to_remove in current_files:
+        current_files.remove(filename_to_remove)
+
+    # Обновляем поле materials в базе данных
+    module.materials = json.dumps(current_files)
+
+    # Сохраняем изменения в базе данных
+    db.session.commit()
+
+    # Уведомляем других пользователей о том, что файл был удален
+    socketio.emit('file_removed', {'filename': filename}, room=f'module_{module_id}')
+
+@app.route('/get_files/<int:module_id>', methods=['GET'])
+def get_files(module_id):
+    """Возвращает список файлов для конкретного модуля"""
+    module = Module.query.get_or_404(module_id)
+    
+    # Проверяем, есть ли материалы в поле 'materials', если есть, отдаем их
+    if module.materials:
+        files = json.loads(module.materials)  # Если это строка JSON, преобразуем в список
+    else:
+        files = []
+
+    return jsonify({'files': files})
+
+##########################################JOINT uploaded_files SOCKET LOGIC end####################################################
+
+##########################################approval LOGIC START####################################################
 
 @app.route('/modules/approval')
 @login_required
@@ -654,7 +790,7 @@ def get_modules_approval():
     return render_template('modules_approval.html', modules=modules)
 
 
-##########################################SOGL LOGIC END####################################################
+##########################################approval LOGIC END####################################################
 
 if __name__ == '__main__':
     scheduler.init_app(app)

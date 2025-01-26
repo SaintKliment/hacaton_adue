@@ -139,40 +139,55 @@
         oninput="sendConstInputs()"
       />
 
-      <!-- Материалы для мероприятий -->
       <label>Материалы для мероприятий:</label>
-      <div id="file-inputs-container">
-        <div class="file-input" id="file_input_1">
+      <div id="file-inputs-container" style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="file-input" id="file_input_1" style="display: flex; align-items: center; gap: 10px;">
           <input
             type="file"
             id="materials_1"
             name="materials[]"
             accept=".pdf,.pptx,.xlsx,.docx,.jpg,.mkv,.avi,.mp,.url"
           />
+          <button
+          type="button"
+          id="add-file-input"
+          style="
+            width: 40px;
+            height: 40px;
+            background-color: #4caf50;
+            border: none;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+          "
+          onmouseover="this.style.backgroundColor='#45a049'; this.style.transform='scale(1.1)';"
+          onmouseout="this.style.backgroundColor='#4caf50'; this.style.transform='scale(1)';"
+          title="Добавить файл"
+        >
+          <span style="
+            position: absolute;
+            width: 18px;
+            height: 3px;
+            background-color: white;
+            border-radius: 2px;
+          "></span>
+          <span style="
+            position: absolute;
+            width: 3px;
+            height: 18px;
+            background-color: white;
+            border-radius: 2px;
+          "></span>
+        </button>
+        
         </div>
       </div>
 
-      <!-- Кнопка для добавления файлов -->
-      <button
-        type="button"
-        id="add-file-input"
-        style="
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 35px;
-          height: 35px;
-          background-color: #4caf50;
-          color: white;
-          border: none;
-          border-radius: 50%;
-          cursor: pointer;
-          margin-top: 10px;
-        "
-        title="Добавить файл"
-      >
-        +
-      </button>
 
       <!-- Кнопка отправки формы -->
       <br /><br />

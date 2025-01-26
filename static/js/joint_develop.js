@@ -254,42 +254,125 @@ socket.on("activity_removed", (data) => {
 //////////////////////////////////SOME FILES UPLOAD LOGIC START//////////////////////////////////////////////////////////////////
 let fileInputCount = 1;
 
-// Добавление нового инпута
-document
-  .getElementById("add-file-input")
-  .addEventListener("click", function () {
-    fileInputCount++;
-    const container = document.getElementById("file-inputs-container");
+const path = window.location.pathname;
+const segments = path.split("/");
+const moduleId = segments.pop() || segments.pop();
 
-    // Создаем новый инпут для файла
-    const newInputDiv = document.createElement("div");
-    newInputDiv.classList.add("file-input");
-    newInputDiv.setAttribute("id", `file_input_${fileInputCount}`);
+socket.emit("join_module", { module_id: moduleId });
 
-    // Вставляем кнопку удаления
-    newInputDiv.innerHTML = `
-      <input
-        type="file"
-        id="materials_${fileInputCount}"
-        name="materials[]"
-        accept=".pdf,.pptx,.xlsx,.docx,.jpg,.mkv,.avi,.mp,.url"
-      />
-      <button type="button" class="remove-file-input" data-input-id="file_input_${fileInputCount}">Удалить</button>
-    `;
+// Получаем уведомление о добавлении файла
+socket.on("file_added", (data) => {
+  const container = document.getElementById("file-inputs-container");
+  const newFileDiv = document.createElement("div");
+  newFileDiv.classList.add("file-input");
+  newFileDiv.setAttribute("id", `file_input_${data.filename}`); // _${fileInputCount}
+  newFileDiv.innerHTML = `
+        <span>${data.filename}</span>
+        <button type="button" class="remove-file-input" data-filename="${data.filename}">Удалить</button>
+      `;
+  container.appendChild(newFileDiv);
 
-    // Добавляем новый инпут в контейнер
-    container.appendChild(newInputDiv);
-
-    // Добавляем обработчик события для кнопки удаления
-    const removeButton = newInputDiv.querySelector(".remove-file-input");
-    removeButton.addEventListener("click", function () {
-      // Не удаляем последний инпут
-      if (fileInputCount > 1) {
-        const inputId = removeButton.getAttribute("data-input-id");
-        const inputDiv = document.getElementById(inputId);
-        inputDiv.remove();
-        fileInputCount--;
-      }
+  // Обработчик кнопки удаления файла
+  newFileDiv
+    .querySelector(".remove-file-input")
+    .addEventListener("click", function () {
+      const filename = this.getAttribute("data-filename");
+      socket.emit("file_removed", { filename, module_id: moduleId });
+      newFileDiv.remove(); // Удаляем файл с интерфейса
     });
+});
+
+socket.on("file_removed", (data) => {
+  const filename = data.filename;
+
+  // Находим элемент с этим файлом на странице
+  const fileDiv = document.getElementById(`file_input_${filename}`);
+
+  // Удаляем элемент из интерфейса
+  if (fileDiv) {
+    fileDiv.remove();
+  }
+});
+
+// Отправка файлов на сервер
+document.getElementById("add-file-input").addEventListener("click", () => {
+  const formData = new FormData();
+  const files = document.querySelectorAll('input[name="materials[]"]');
+  files.forEach((fileInput) => {
+    if (fileInput.files[0]) {
+      formData.append("materials[]", fileInput.files[0]);
+    }
   });
+
+  fetch(`/upload/${moduleId}`, {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("Uploaded:", data.uploaded_files);
+    })
+    .catch((error) => console.error("Error uploading files:", error));
+});
+
+const fileInput = document.getElementById("materials_1");
+const addFileButton = document.getElementById("add-file-input");
+
+// Функция для показа/скрытия кнопки
+function toggleButtonVisibility() {
+  if (fileInput.files.length > 0) {
+    addFileButton.style.display = "flex"; // Показываем кнопку, если файл выбран
+  } else {
+    addFileButton.style.display = "none"; // Скрываем кнопку, если файл не выбран
+  }
+}
+
+// Инициализация состояния кнопки на старте
+toggleButtonVisibility();
+
+// Добавляем обработчик события для отслеживания выбора файла
+fileInput.addEventListener("change", toggleButtonVisibility);
+
+document.addEventListener("DOMContentLoaded", function () {
+  const moduleId = 15; // Замените на ID модуля, который вам нужен
+
+  // Запрос на сервер для получения списка файлов
+  fetch(`/get_files/${moduleId}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.files && data.files.length > 0) {
+        const container = document.getElementById("file-inputs-container");
+
+        // Проходим по файлам и добавляем их в DOM
+        data.files.forEach((filename) => {
+          const newFileDiv = document.createElement("div");
+          newFileDiv.classList.add("file-input");
+          newFileDiv.setAttribute("id", `file_input_${filename}`);
+          newFileDiv.innerHTML = `
+            <span>${filename}</span>
+            <button type="button" class="remove-file-input" data-filename="${filename}">Удалить</button>
+          `;
+          container.appendChild(newFileDiv);
+
+          // Обработчик для удаления файла
+          newFileDiv
+            .querySelector(".remove-file-input")
+            .addEventListener("click", function () {
+              const filename = this.getAttribute("data-filename");
+              socket.emit("file_removed", { filename, module_id: moduleId });
+              newFileDiv.remove(); // Удаляем файл с интерфейса
+            });
+        });
+      }
+    })
+    .catch((error) => {
+      console.error("Ошибка при получении файлов:", error);
+    });
+});
+
 //////////////////////////////////SOME FILES UPLOAD LOGIC END//////////////////////////////////////////////////////////////////
+
+socket.on("module_sent_for_approval", function (data) {
+  // Можете обработать событие, например, обновить интерфейс
+  window.location.href = "/module_sent/" + data.module_id;
+});
