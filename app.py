@@ -323,7 +323,37 @@ def module_detail(module_id):
     # Извлекаем пользователей по этим id
         responsible_users = User.query.filter(User.id.in_([int(user_id) for user_id in responsible_user_ids])).all()
  
-    return render_template('module_detail.html', module=module, responsible_users=responsible_users)
+    if isinstance(module.materials, str):
+        try:
+            module.materials = json.loads(module.materials)
+        except json.JSONDecodeError:
+            module.materials = []
+
+    activities = Activity.query.filter_by(module_id=str(module_id)).all()
+    
+
+    prepared_activities = []
+
+    for activity in activities:
+        # Преобразуем строки в списки, если они существуют
+        names = json.loads(activity.name) if activity.name else []
+        types = json.loads(activity.type) if activity.type else []
+        contents = json.loads(activity.content) if activity.content else []
+
+        # Для каждого мероприятия создадим список словарей, которые будем передавать в шаблон
+        for i in range(max(len(names), len(types), len(contents))):
+            activity_name = names[i] if i < len(names) else "N/A"
+            activity_type = types[i] if i < len(types) else "theory"  # Если пусто, ставим "theory"
+            activity_content = contents[i] if i < len(contents) else "N/A"
+
+            # Добавляем подготовленные данные в список
+            prepared_activities.append({
+                'name': activity_name,
+                'type': activity_type,
+                'content': activity_content
+            })
+
+    return render_template('module_detail.html',activities=prepared_activities, module=module, responsible_users=responsible_users)
 
 ##########################################VIEW MODULES  LOGIC END####################################################
 

@@ -50,6 +50,12 @@
           <strong>Тип:</strong> {{ activity.type }}<br />
           <strong>Описание:</strong> {{ activity.content }}
         </li>
+        {% endfor %} {% for activity in activities %}
+        <li>
+          <strong>Название:</strong> {{ activity.name }}<br />
+          <strong>Тип:</strong> {{ activity.type }}<br />
+          <strong>Описание:</strong> {{ activity.content }}<br />
+        </li>
         {% endfor %}
       </ul>
       {% endif %} {% if module.data_source %}
