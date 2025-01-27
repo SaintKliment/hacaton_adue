@@ -1,7 +1,9 @@
+import ast
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session, send_from_directory
 from flask_mail import Mail, Message
 import os
 import json
+from models.Re_Modules import Re_Modules
 from models.Approval import Approval
 from models.Activity import Activity
 from validate import validate_module_data, validate_registration_data
@@ -246,12 +248,18 @@ def draft():
 
 
 ##########################################ADD MODULE BY HR LOGIC START##############################################
-def send_email(recipient):
-    msg = Message("Назначение разработчиком адаптационного модуля",
+def send_email(recipient, message=""):
+    if message == "":
+        msg = Message("Назначение разработчиком адаптационного модуля",
                   recipients=[recipient])
-    msg.body = "Добрый день, коллеги.\nВы назначены разработчиком адаптационного модуля. Просим ознакомиться с приказом и приступить к работе."
-    msg.html = "<p>Добрый день, коллеги.</p><p>Вы назначены разработчиком адаптационного модуля. Просим ознакомиться с приказом и приступить к работе.</p>"
-    
+        msg.body = "Добрый день, коллеги.\nВы назначены разработчиком адаптационного модуля. Просим ознакомиться с приказом и приступить к работе."
+        msg.html = "<p>Добрый день, коллеги.</p><p>Вы назначены разработчиком адаптационного модуля. Просим ознакомиться с приказом и приступить к работе.</p>"
+    else:
+        msg = Message("Отклонение модуля",
+                  recipients=[recipient])
+        msg.body = f"{message}"
+        msg.html = f"<p>{message}</p>"
+
     with app.app_context():
         mail.send(msg)
 
@@ -445,6 +453,23 @@ def joint_development_detail(module_id):
 
         # Уведомляем всех пользователей о том, что модуль отправлен в согласование через сокет
         socketio.emit('module_sent_for_approval', {'module_id': module_id}, room=f'module_{module_id}'  )
+
+        current_user_id = session['user_id']
+
+        responsible_user_ids = module.responsible_user_ids
+        responsible_user_ids = ast.literal_eval(responsible_user_ids)
+
+        users = User.query.filter(User.id.in_(responsible_user_ids)).all()
+        fio = User.query.filter_by(id=current_user_id).first()
+        emails = [user.email for user in users]
+        
+        now = datetime.now()
+        message = f"""
+        Модуль {module.code_name} направил на согласование пользователь с иницаиалами {fio.full_name}, {now}
+        """
+        for email in emails:
+            print(email, message)
+            # send_email(email, message )
 
         # Перенаправляем на страницу с уведомлением
         return redirect(url_for('module_sent_page', module_id=module_id))
@@ -943,13 +968,48 @@ def module_successfully_accept(module_id):
 def reject_module(module_id):
     reason = request.form.get('reason')
     comments = request.form.get('comments')
-    correction_date = request.form.get('correction_date')
+    correction_days = request.form.get('correction_days')
 
-    # Здесь можно добавить логику для сохранения данных в базе данных
-    print(f"Модуль {module_id} отклонен. Причина: {reason}, Замечания: {comments}, Срок исправления: {correction_date}")
+    module = Module.query.get_or_404(module_id)
+    module.state = 'черновик'
+    db.session.commit()
+
+    re_mod = Re_Modules(reason=reason, comments=comments, correction_period=correction_days, module_id=module_id)
+    db.session.add(re_mod)
+    db.session.commit()
+
+    responsible_user_ids = module.responsible_user_ids
+    responsible_user_ids = ast.literal_eval(responsible_user_ids)
+
+    users = User.query.filter(User.id.in_(responsible_user_ids)).all()
+    emails = [user.email for user in users]
+
+    message = f"""
+    reason: {reason}\n
+    comments: {comments}\n
+    correction_days: {correction_days}
+    """
+    for email in emails:
+        print(email, message)
+        # send_email(email, message ) 
 
     # Перенаправляем пользователя обратно на страницу модуля
-    return redirect(url_for('module_detail', module_id=module_id))
+    return redirect(url_for('successfully_reject_module', module_id=module_id))
+
+
+@app.route('/successfully_reject_module')
+@login_required
+def successfully_reject_module():
+    module_id = request.args.get('module_id')
+    module = Module.query.get_or_404(module_id)
+    
+    # Отображаем страницу с сообщением об успешном отклонении модуля
+    return render_template('successfully_reject_module.html', 
+                           module_id=module_id, 
+                           message=f"Модуль {module.code_name} успешно отклонен!")
+
+
+
 ##########################################approval LOGIC END####################################################
 
 if __name__ == '__main__':
