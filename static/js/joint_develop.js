@@ -189,7 +189,7 @@ socket.on("activity_updated", (data) => {
   const inputElement = document.querySelector(
     `#${activityId} [id^="activity_${field}_"]`
   );
-
+  console.log(value);
   if (inputElement) {
     inputElement.value = value; // Обновляем значение
   }

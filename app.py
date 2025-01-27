@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, jsonify, url_for, f
 from flask_mail import Mail, Message
 import os
 import json
+from models.Approval import Approval
 from models.Activity import Activity
 from validate import validate_module_data, validate_registration_data
 from werkzeug.utils import secure_filename 
@@ -300,6 +301,28 @@ def hr_add():
 
 
 ##########################################VIEW MODULES  LOGIC START#################################################
+
+def is_user_in_sogl_users(module_id, user_id):
+    # Находим модуль по его ID
+    module = Module.query.filter_by(id=module_id).first()
+    if not module:
+        return False  # Модуль не найден
+
+    # Извлекаем sogl_users и преобразуем строку в список чисел
+    sogl_users_str = module.sogl_users
+    if not sogl_users_str or sogl_users_str == "{}":
+        return False  # Нет данных в sogl_users
+
+    # Убираем фигурные скобки и разделяем строку по запятым
+    sogl_users_list = sogl_users_str.strip("{}").split(",")
+    sogl_users_ids = [int(user_id.strip()) for user_id in sogl_users_list if user_id.strip().isdigit()]
+
+    if not sogl_users_ids:
+        return False  # Нет корректных ID в sogl_users
+
+    # Проверяем, есть ли user_id в списке sogl_users_ids
+    return user_id in sogl_users_ids
+
 @app.route('/view_modules', methods=['GET'])
 @login_required
 def view_modules():
@@ -346,6 +369,17 @@ def module_detail(module_id):
             activity_type = types[i] if i < len(types) else "theory"  # Если пусто, ставим "theory"
             activity_content = contents[i] if i < len(contents) else "N/A"
 
+            # Функция для удаления последних двух символов, если предпоследний символ — это '_'
+            def remove_suffix_if_needed(value):
+                if len(value) >= 2 and value[-2] == '_':  # Проверяем, что предпоследний символ — '_'
+                    return value[:-2]  # Удаляем последние два символа
+                return value
+        
+            # Применяем функцию к каждому полю
+            activity_name = remove_suffix_if_needed(activity_name)
+            activity_type = remove_suffix_if_needed(activity_type)
+            activity_content = remove_suffix_if_needed(activity_content)
+
             # Добавляем подготовленные данные в список
             prepared_activities.append({
                 'name': activity_name,
@@ -353,7 +387,12 @@ def module_detail(module_id):
                 'content': activity_content
             })
 
-    return render_template('module_detail.html',activities=prepared_activities, module=module, responsible_users=responsible_users)
+    current_user_id = session['user_id']
+    result = is_user_in_sogl_users(module_id, current_user_id)
+    user = User.query.get(current_user_id)
+
+    
+    return render_template('module_detail.html',user=user, sogl_user=result, activities=prepared_activities, module=module, responsible_users=responsible_users)
 
 ##########################################VIEW MODULES  LOGIC END####################################################
 
@@ -395,6 +434,9 @@ def joint_development():
 @login_required
 def joint_development_detail(module_id):
     module = db.session.get(Module, module_id)
+
+    if module.state == 'согласование':
+        return redirect(url_for('index'))
 
     if request.method == 'POST':
         # Изменяем статус модуля
@@ -508,24 +550,47 @@ def handle_add_activity(data):
     activityCount = data['activityCount']
     module_id = data['moduleId']
     current_user_id = session['user_id']
+    
+    # Обновляем last_user_id в модуле
     module = Module.query.filter_by(id=module_id).first()
     module.last_user_id = current_user_id
     db.session.commit()
 
-    
-
+    # Ищем существующую запись Activity для данного module_id
     existing_activity = Activity.query.filter_by(module_id=module_id).first()
 
     if existing_activity:
         # Если запись найдена, обновляем поле activityCount
         existing_activity.activityCount = activityCount
+        
+        # Получаем текущее значение поля type
+        current_type = existing_activity.type
+        if current_type is None:
+            current_type = []  # Если поле type пустое, инициализируем пустым списком
+        else:
+            try:
+                current_type = json.loads(current_type)  # Преобразуем строку в список
+            except json.JSONDecodeError:
+                current_type = []  # В случае ошибки парсинга берем пустой список
+
+        # Формируем новое значение для добавления в type
+        new_value = f"theory_{activityCount}"
+
+        # Проверяем, существует ли уже значение с таким индексом
+        value_exists = any(val.startswith(f"theory_{activityCount}") for val in current_type)
+
+        if not value_exists:
+            # Если такого значения нет, добавляем его
+            current_type.append(new_value)
+            existing_activity.type = json.dumps(current_type)  # Преобразуем обратно в строку
+
     else:
         # Если запись не найдена, создаём новую
         new_activity = Activity(
             module_id=module_id,
             activityCount=activityCount,
+            type=json.dumps([f"theory_{activityCount}"])  # Инициализируем поле type с новым значением
         )
-
         db.session.add(new_activity)
     
     db.session.commit()
@@ -553,11 +618,6 @@ def handle_remove_activity(data):
 
             # Формируем строку из оставшихся элементов и оборачиваем в скобки
             updated_field = "[" + ",".join(non_matching_entries) + "]" if non_matching_entries else "[]"
-
-            # # Выводим для диагностики
-            # print(f"Исходное поле: {field}")
-            # print(f"Строки без отобранных по паттерну: {non_matching_entries}")
-            # print(f"Обновленное поле: {updated_field}")
 
             # Возвращаем обновленную строку
             return updated_field
@@ -819,7 +879,77 @@ def get_modules_approval():
     # Рендерим HTML-шаблон и передаем данные
     return render_template('modules_approval.html', modules=modules)
 
+@app.route('/accept_module/<int:module_id>', methods=['GET'])
+@login_required
+def accept_module(module_id):
+    module = Module.query.get_or_404(module_id)
 
+    # APP_COUNTER = 0
+    
+    sogl_user_value = module.sogl_users
+    sogl_user_value = sogl_user_value.strip("{}").replace(" ", "")
+    numbers_list = [int(num) for num in sogl_user_value.split(",")]
+    total_count = len(numbers_list)
+    
+    approval_ = Approval.query.filter_by(module_id=str(module_id)).first()
+    if approval_:
+        current_user_id = session['user_id']
+        user = User.query.get(current_user_id)
+        user.approval = 'yes'
+
+        # Если запись с таким module_id уже существует, обновляем поле now_counter
+        now = int(approval_.now_counter)  # Преобразуем в int для выполнения операций
+        print(f"Current now_counter value: {now}")
+        now += 1  # Увеличиваем на 1
+
+        # Обновляем существующую запись
+        approval_.now_counter = str(now)  # Обновляем значение поля now_counter
+        approval_.total_counter = str(total_count)  # Обновляем total_count
+        print(f"Updated now_counter: {now}")
+        db.session.commit()
+        # APP_COUNTER = approval_.now_counter
+        
+    else:
+        current_user_id = session['user_id']
+        user = User.query.get(current_user_id)
+        user.approval = 'yes'
+
+        approval = Approval(total_counter=str(total_count), now_counter='1', module_id=module_id)
+        db.session.add(approval)
+        db.session.commit()
+        print("New approval record created")
+        
+
+
+    a = Approval.query.filter_by(module_id=str(module_id)).first()
+    print()
+    if a.now_counter == a.total_counter:
+        module.state = "принят в работу"
+        db.session.commit()
+        
+    return redirect(url_for('module_successfully_accept', module_id=module_id))
+    
+
+@app.route('/module_successfully_accept/<int:module_id>', methods=['GET'])
+@login_required
+def module_successfully_accept(module_id):
+    # Мы можем снова получить данные модуля, если нужно
+    module = Module.query.get_or_404(module_id)
+
+    return render_template('successfully_accept.html', module=module)
+
+@app.route('/reject_module/<int:module_id>', methods=['POST'])
+@login_required
+def reject_module(module_id):
+    reason = request.form.get('reason')
+    comments = request.form.get('comments')
+    correction_date = request.form.get('correction_date')
+
+    # Здесь можно добавить логику для сохранения данных в базе данных
+    print(f"Модуль {module_id} отклонен. Причина: {reason}, Замечания: {comments}, Срок исправления: {correction_date}")
+
+    # Перенаправляем пользователя обратно на страницу модуля
+    return redirect(url_for('module_detail', module_id=module_id))
 ##########################################approval LOGIC END####################################################
 
 if __name__ == '__main__':

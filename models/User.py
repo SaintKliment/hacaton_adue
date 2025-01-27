@@ -12,6 +12,7 @@ class User(UserMixin,   db.Model):
     password = db.Column(db.String(256), nullable=False)  
     position = db.Column(db.String(256), nullable=False)  
     sys_role = db.Column(db.String(256), nullable=True)
+    approval = db.Column(db.String(256), nullable=True)
 
     def __repr__(self):
         return f'<User {self.full_name}>'

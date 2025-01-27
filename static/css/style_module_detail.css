@@ -87,3 +87,65 @@ h1 {
   background-color: #ddd; /* Цвет при наведении */
   cursor: pointer; /* Курсор при наведении */
 }
+
+/* Дополнительные стили для анимаций и кастомизации */
+.approval-buttons .btn {
+  margin: 5px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.approval-buttons .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.rejection-form {
+  display: none;
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.rejection-form textarea {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  padding: 8px;
+}
+.rejection-form input[type="date"] {
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  padding: 8px;
+}
+.rejection-form button {
+  width: 100%;
+}
+.module-details {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.module-details h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+.module-details p {
+  font-size: 1rem;
+  color: #555;
+}
+.module-details ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+.module-details ul li {
+  margin-bottom: 10px;
+}
+.btn-secondary {
+  margin-top: 20px;
+}
