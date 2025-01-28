@@ -1,8 +1,10 @@
 import ast
+from crypto_logic import generate_keys, serialize_keys, sign_data, verify_signature
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session, send_from_directory
 from flask_mail import Mail, Message
 import os
 import json
+from models.Crypto_ut import Crypto_ut
 from models.Re_Modules import Re_Modules
 from models.Approval import Approval
 from models.Activity import Activity
@@ -17,7 +19,7 @@ from models.User import User
 from flask_migrate import Migrate
 from models.Module import Module
 from flask_socketio import SocketIO, emit, join_room
-from flask_apscheduler import APScheduler  
+from flask_apscheduler import APScheduler 
 from datetime import datetime, timedelta
 import re
 
@@ -947,8 +949,30 @@ def accept_module(module_id):
 
 
     a = Approval.query.filter_by(module_id=str(module_id)).first()
-    print()
-    if a.now_counter == a.total_counter:
+
+    if int(a.now_counter) >= int(a.total_counter):
+        # Преобразуем объект в словарь
+        module_dict = {column.name: getattr(module, column.name) for column in module.__table__.columns}
+
+        # Сериализуем словарь в JSON (если нужно)
+        module_json = json.dumps(module_dict, indent=4, ensure_ascii=False)
+
+        private_key, public_key = generate_keys()
+        
+        signature = sign_data(module_json, private_key)
+        # print("ЭЦП создана:", signature.hex())
+        
+        # Проверка ЭЦП
+        is_valid = verify_signature(module_json, signature, public_key)
+        # print("ЭЦП верна:", is_valid)
+        
+        private_pem, public_pem = serialize_keys(private_key, public_key)
+        
+        crypto = Crypto_ut(public_key_pem=public_pem, signature=signature, module_id=module_id, data=module_json)
+        db.session.add(crypto)
+        db.session.commit()
+
+
         module.state = "принят в работу"
         db.session.commit()
         
