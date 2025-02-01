@@ -26,15 +26,6 @@
         name="sogl_users[]"
         multiple
         size="5"
-        <!--
-        можно
-        указать
-        нужное
-        количество
-        отображаемых
-        строк
-        --
-      >
         required > {% for sogl_user in sogl_users %}
         <option value="{{ sogl_user.id }}">{{ sogl_user.full_name }}</option>
         {% endfor %}
@@ -46,13 +37,6 @@
         name="responsible_users[]"
         multiple
         size="5"
-        <!--
-        аналогично,
-        укажите
-        нужное
-        количество
-        --
-      >
         required > {% for user in users %}
         <option value="{{ user.id }}">{{ user.full_name }}</option>
         {% endfor %}

@@ -91,7 +91,7 @@
         <strong>Срок разработки:</strong> {{ module.duration_develop }} дней
       </p>
       {% endif %}        <!-- Кнопки согласования и отклонения -->
-      {% if sogl_user and module.state == 'согласование' and user.approval != 'yes'  %}
+      {% if sogl_user and module.state == 'согласование' and approval_module != 'yes'  %}
       <div class="approval-buttons">
         <button class="btn btn-success" onclick="acceptModule({{ module.id }})  ">
           Согласовать

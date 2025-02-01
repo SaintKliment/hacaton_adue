@@ -1,5 +1,5 @@
 import ast
-from crypto_logic import generate_keys, serialize_keys, sign_data, verify_signature
+from crypto_logic import generate_keys, serialize_keys, sign_data, verify_signature, deserialize_public_key, deserialize_signature
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, session, send_from_directory
 from flask_mail import Mail, Message
 import os
@@ -8,6 +8,7 @@ from models.Crypto_ut import Crypto_ut
 from models.Re_Modules import Re_Modules
 from models.Approval import Approval
 from models.Activity import Activity
+from models.User import User
 from validate import validate_module_data, validate_registration_data
 from werkzeug.utils import secure_filename 
 from flask_bootstrap import Bootstrap
@@ -15,7 +16,6 @@ from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 from db import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from models.User import User
 from flask_migrate import Migrate
 from models.Module import Module
 from flask_socketio import SocketIO, emit, join_room
@@ -68,7 +68,7 @@ def signup():
         password = request.form['password']
         position = request.form.get('position', '')
 
-                # Валидация данных
+        # Валидация данных
         validation_error = validate_registration_data(full_name, email, password)
         if validation_error:
             flash(validation_error, 'danger')
@@ -271,7 +271,7 @@ def hr_add():
     if request.method == 'POST':
         # Получаем данные из формы
         code_name = request.form.get('module_name')
-        responsible_user_ids = request.form.getlist('responsible_users')
+        responsible_user_ids = request.form.getlist('responsible_users[]')
         duration_develop = request.form.get('duration')
         selected_sogl_users = request.form.getlist('sogl_users[]')  
         state = "новый"
@@ -401,8 +401,27 @@ def module_detail(module_id):
     result = is_user_in_sogl_users(module_id, current_user_id)
     user = User.query.get(current_user_id)
 
+    approval_module = user.approval
+
+    if approval_module is not None:
+        approval_list = approval_module.split(',')
+        approval_list = [value for value in approval_list if value != '']
+
+        for item in approval_list:
+            item_cleaned = item.replace('{', '').replace('}', '').replace('"', '').replace('\\', '').strip('/\\')
+
+            last_char = item_cleaned[-1]
+
+            if int(last_char) == module_id:
+                approval_module = 'yes'
+                break
     
-    return render_template('module_detail.html',user=user, sogl_user=result, activities=prepared_activities, module=module, responsible_users=responsible_users)
+    if approval_module != 'yes':
+        approval_module = 'no'    
+    
+    # print(approval_module)
+
+    return render_template('module_detail.html',approval_module=approval_module, user=user, sogl_user=result, activities=prepared_activities, module=module, responsible_users=responsible_users)
 
 ##########################################VIEW MODULES  LOGIC END####################################################
 
@@ -922,7 +941,12 @@ def accept_module(module_id):
     if approval_:
         current_user_id = session['user_id']
         user = User.query.get(current_user_id)
-        user.approval = 'yes'
+
+        prom_app = user.approval
+        if prom_app == None:
+            prom_app = ''
+        prom_app += ', yes'+ str(module_id)
+        user.approval = prom_app
 
         # Если запись с таким module_id уже существует, обновляем поле now_counter
         now = int(approval_.now_counter)  # Преобразуем в int для выполнения операций
@@ -939,7 +963,13 @@ def accept_module(module_id):
     else:
         current_user_id = session['user_id']
         user = User.query.get(current_user_id)
-        user.approval = 'yes'
+        
+        prom_app = user.approval
+        if prom_app == None:
+            prom_app = ''
+        prom_app += ', yes'+ str(module_id)
+        user.approval = prom_app
+        
 
         approval = Approval(total_counter=str(total_count), now_counter='1', module_id=module_id)
         db.session.add(approval)
@@ -1027,6 +1057,29 @@ def successfully_reject_module():
     module_id = request.args.get('module_id')
     module = Module.query.get_or_404(module_id)
     
+    db.session.query(Approval).filter(Approval.module_id == module_id).delete()
+
+    responsible_user_ids_str = module.sogl_users
+    responsible_user_ids = responsible_user_ids_str.strip('{}').replace(' ', '').split(',')
+    responsible_users = User.query.filter(User.id.in_([int(user_id) for user_id in responsible_user_ids])).all()
+    
+    for i in responsible_user_ids:
+        user_id = int(i)
+        user = User.query.filter_by(id=user_id).first()
+        
+        approval_module = user.approval
+        if approval_module is not None:
+            approval_list = approval_module.split(',')
+            approval_list = [value for value in approval_list if value != '']
+
+            approval_list = [item for item in approval_list if not item.endswith(str(module_id))]
+            
+            user.approval = approval_list
+                
+    # Сохранение изменений  
+    db.session.commit()
+
+
     # Отображаем страницу с сообщением об успешном отклонении модуля
     return render_template('successfully_reject_module.html', 
                            module_id=module_id, 
@@ -1035,6 +1088,97 @@ def successfully_reject_module():
 
 
 ##########################################approval LOGIC END####################################################
+
+
+
+@app.route('/modules/print')
+@login_required
+def modules_print():
+    modules = Module.query.filter(Module.state.in_( ['принят в работу'] )).all()
+    return render_template('print_modules.html', modules=modules) 
+
+@app.route('/modules/print/<int:module_id>')
+@login_required
+def module_print(module_id):
+    module = Module.query.get_or_404(module_id)  # Получаем модуль по ID или возвращаем 404
+
+    responsible_user_ids_str = module.responsible_user_ids
+    if not responsible_user_ids_str or responsible_user_ids_str == 'None':
+        responsible_users = None  # Возвращаем None, если строка пустая или 'None'
+    else:
+    # Убираем фигурные скобки и пробелы, а затем разделяем по запятой
+        responsible_user_ids = responsible_user_ids_str.strip('{}').replace(' ', '').split(',')
+    # Извлекаем пользователей по этим id
+        responsible_users = User.query.filter(User.id.in_([int(user_id) for user_id in responsible_user_ids])).all()
+ 
+    if isinstance(module.materials, str):
+        try:
+            module.materials = json.loads(module.materials)
+        except json.JSONDecodeError:
+            module.materials = []
+
+    activities = Activity.query.filter_by(module_id=str(module_id)).all()
+    
+
+    prepared_activities = []
+
+    for activity in activities:
+        # Преобразуем строки в списки, если они существуют
+        names = json.loads(activity.name) if activity.name else []
+        types = json.loads(activity.type) if activity.type else []
+        contents = json.loads(activity.content) if activity.content else []
+
+        # Для каждого мероприятия создадим список словарей, которые будем передавать в шаблон
+        for i in range(max(len(names), len(types), len(contents))):
+            activity_name = names[i] if i < len(names) else "N/A"
+            activity_type = types[i] if i < len(types) else "theory"  # Если пусто, ставим "theory"
+            activity_content = contents[i] if i < len(contents) else "N/A"
+
+            # Функция для удаления последних двух символов, если предпоследний символ — это '_'
+            def remove_suffix_if_needed(value):
+                if len(value) >= 2 and value[-2] == '_':  # Проверяем, что предпоследний символ — '_'
+                    return value[:-2]  # Удаляем последние два символа
+                return value
+        
+            # Применяем функцию к каждому полю
+            activity_name = remove_suffix_if_needed(activity_name)
+            activity_type = remove_suffix_if_needed(activity_type)
+            activity_content = remove_suffix_if_needed(activity_content)
+
+            # Добавляем подготовленные данные в список
+            prepared_activities.append({
+                'name': activity_name,
+                'type': activity_type,
+                'content': activity_content
+            })
+
+    current_user_id = session['user_id']
+    result = is_user_in_sogl_users(module_id, current_user_id)
+    user = User.query.get(current_user_id)
+
+    
+    crypto_record = db.session.query(Crypto_ut).filter(Crypto_ut.module_id == str(module_id)).first()
+
+    print(crypto_record)
+    crypto_data = {
+            "data": crypto_record.data,
+            "signature": crypto_record.signature,
+            "public_key_pem": crypto_record.public_key_pem
+        }
+
+    data = crypto_data["data"]
+    signature = crypto_data["signature"]
+    public_key_pem = crypto_data["public_key_pem"]
+
+    public_key = deserialize_public_key(public_key_pem)
+    
+    # Проверяем подпись
+    is_valid = verify_signature(data, signature, public_key)
+    # print("ЭЦП верна:", is_valid)
+
+
+    return render_template('print_module.html', is_valid=is_valid, user=user, sogl_user=result, activities=prepared_activities, module=module, responsible_users=responsible_users)  
+    # return render_template('module_detail.html', module=module)  
 
 if __name__ == '__main__':
     scheduler.init_app(app)

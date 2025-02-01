@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Информация о модуле</title>
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    />
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style_module_detail.css') }}"
+    />
+    <script src="{{ url_for('static', filename='js/module_detail.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Информация о модуле: {{ module.code_name }}</h1>
+        <div class="module-details">
+            {% if module.code_name %}
+                <p><strong>Кодовое название:</strong> {{ module.code_name }}</p>
+            {% endif %}
+            {% if module.responsible_user_ids %}
+                <strong>Ответственные пользователи за разработку модуля:</strong>
+                <ul>
+                    {% for user in responsible_users %}
+                        <li>{{ user.full_name }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if module.id %}
+                <p><strong>ID данного модуля:</strong> {{ module.id }}</p>
+            {% endif %}
+            {% if module.module_name %}
+                <p><strong>Название:</strong> {{ module.module_name }}</p>
+            {% endif %}
+            {% if module.importance %}
+                <p><strong>Важность:</strong> {{ module.importance }}</p>
+            {% endif %}
+            {% if module.state %}
+                <p><strong>Состояние:</strong> {{ module.state }}</p>
+            {% endif %}
+            {% if module.positions %}
+                <p><strong>Должности:</strong></p>
+                <ul>
+                    {% for position in module.positions %}
+                        <li>{{ position }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if module.activities %}
+                <p><strong>Мероприятия:</strong></p>
+                <ul style="text-decoration: none; list-style-type: none">
+                    {% for activity in module.activities %}
+                        <li>
+                            <strong>Название:</strong> {{ activity.name }}<br />
+                            <strong>Тип:</strong> {{ activity.type }}<br />
+                            <strong>Описание:</strong> {{ activity.content }}
+                        </li>
+                    {% endfor %} 
+                    {% for activity in activities %}
+                    <li>
+                      <strong>Название:</strong> {{ activity.name }}<br />
+                      <strong>Тип:</strong> {{ activity.type }}<br />
+                      <strong>Описание:</strong> {{ activity.content }}<br />
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if module.data_source %}
+                <p><strong>Источник(и):</strong> {{ module.data_source }}</p>
+            {% endif %}
+            {% if module.duration %}
+                <p><strong>Cрок выполнения:</strong> {{ module.duration }}</p>
+            {% endif %}
+            {% if module.responsible %}
+                <p><strong>Ответственный:</strong> {{ module.responsible }}</p>
+            {% endif %}
+            <!-- {% if module.materials %}
+      <p><strong>Материалы:</strong></p>
+      <ul class="list-unstyled">
+        {% for filename in module.materials %}
+        <li class="mb-3">
+          <a
+            href="{{ url_for('download_file', filename=filename) }}"
+            class="btn btn-download"
+            download
+          >
+            Скачать {{ filename }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p><strong>Материалы:</strong> Материалы не добавлены</p>
+      {% endif %}  -->
+            {% if module.duration_develop %}
+                <p><strong>Срок разработки:</strong> {{ module.duration_develop }} дней</p>
+            {% endif %}
+            <div class="container mt-5">
+                <h1>Статус электронной цифровой подписи</h1>
+        
+                {% if is_valid %}
+                    <div class="alert alert-success" role="alert">
+                        ЭЦП подтверждена.
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger" role="alert">
+                        ЭЦП не подтверждена.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Кнопка для печати -->
+        <button class="btn btn-primary" onclick="printModuleDetails()">Печать</button>
+        <!-- Кнопка для возврата на главную -->
+        <a href="/" class="btn btn-secondary">Назад на главную</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function printModuleDetails() {
+            // Сохраняем оригинальное содержимое body
+            const originalBodyContent = document.body.innerHTML;
+
+            // Создаем новое содержимое, содержащее только блок с классом module-details
+            const moduleDetails = document.querySelector('.module-details').outerHTML;
+
+            // Заменяем содержимое body на содержимое блока module-details
+            document.body.innerHTML = `<div class="module-details">${moduleDetails}</div>`;
+
+            // Запускаем печать
+            window.print();
+
+            // Восстанавливаем оригинальное содержимое body после печати
+            document.body.innerHTML = originalBodyContent;
+        }
+    </script>
+</body>
+</html>

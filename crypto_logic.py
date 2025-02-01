@@ -36,13 +36,43 @@ def deserialize_private_key(private_pem):
     )
     return private_key
 
-# Десериализация публичного ключа из PEM-формата
-def deserialize_public_key(public_pem):
+
+def deserialize_public_key(public_pem_hex):
+    """
+    Десериализует открытый ключ из PEM-формата, хранящегося в hex-формате.
+    """
+    # Преобразуем hex-строку в байты
+    if isinstance(public_pem_hex, str) and public_pem_hex.startswith("\\x"):
+        # Убираем префикс "\x" и преобразуем hex-строку в байты
+        public_pem_bytes = bytes.fromhex(public_pem_hex[2:])
+    elif isinstance(public_pem_hex, bytes):
+        # Если данные уже в байтах, используем их напрямую
+        public_pem_bytes = public_pem_hex
+    else:
+        raise ValueError("Неподдерживаемый формат данных для public_pem")
+
+    # Преобразуем байты в строку UTF-8
+    public_pem_str = public_pem_bytes.decode('utf-8')
+
+    # Загружаем открытый ключ
     public_key = serialization.load_pem_public_key(
-        public_pem,
+        public_pem_str.encode('utf-8'),
         backend=default_backend()
     )
     return public_key
+    
+def deserialize_signature(signature_hex):
+    """
+    Преобразует подпись из hex-формата в байты.
+    """
+    if isinstance(signature_hex, str) and signature_hex.startswith("\\x"):
+        # Убираем префикс "\x" и преобразуем hex-строку в байты
+        return bytes.fromhex(signature_hex[2:])
+    elif isinstance(signature_hex, bytes):
+        # Если данные уже в байтах, используем их напрямую
+        return signature_hex
+    else:
+        raise ValueError("Неподдерживаемый формат данных для подписи")
 
 # Создание ЭЦП для данных
 def sign_data(data, private_key):
@@ -61,10 +91,11 @@ def sign_data(data, private_key):
     return signature
 
 # Проверка ЭЦП
-def verify_signature(data, signature, public_key):
+def verify_signature(data, signature_hex, public_key):
     # Преобразуем данные в JSON-строку
     data_json = json.dumps(data, sort_keys=True).encode('utf-8')
     
+    signature = deserialize_signature(signature_hex)
     try:
         # Проверяем подпись
         public_key.verify(

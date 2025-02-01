@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Список модулей</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='/css/style_modules.css') }}"
+    />
+    <script
+      type="module"
+      src="{{ url_for('static', filename='/js/search_print_modules.js') }}"
+    ></script>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>Меню</h2>
+      <input type="text" placeholder="Поиск..." id="search-input" />
+    </div>
+    <div class="modules-container">
+      <h1>Список модулей</h1>
+      {% for module in modules %}
+      <div
+        class="module"
+        style="background-color:
+                {% if module.duration_develop < 7 %} red  
+                {% elif module.state == 'черновик' %} yellow
+                {% elif module.state == 'новый просмотрен' %} green
+                {% else %} #40E0D0
+                {% endif %};"
+        data-state="{% if module.duration_develop < 7 %}срочный{% else %} {{module.state}} {% endif %}"
+      >
+        <a
+          href="{{ url_for('module_print', module_id=module.id) }}"
+          style="color: white; text-decoration: none"
+        >
+          {{ module.code_name }}
+        </a>
+      </div>
+      {% endfor %}
+      <!-- Кнопка "Назад на главную" -->
+      <a href="/" class="btn-secondary">Назад на главную</a>
+    </div>
+  </body>
+</html>
